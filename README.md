@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # fixit_jo
 
 A new Flutter project.
@@ -15,3 +16,6 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+=======
+# fixit-jo
+>>>>>>> 4e479143b99b6bd52bcd860a10bf99cf184f9626
