@@ -1,21 +1,57 @@
-<<<<<<< HEAD
-# fixit_jo
+# 🔧 FixIt Jo - Home Maintenance Service App
 
-A new Flutter project.
+---
 
-## Getting Started
+## 🏠 About the App
 
-This project is a starting point for a Flutter application.
+FixIt Jo is a mobile application designed to connect customers with local technicians in Amman, Jordan. The app allows customers to find nearby technicians using GPS, request home maintenance services, and chat with an AI-powered chatbot to identify their issue and get the right help.
 
-A few resources to get you started if this is your first Flutter project:
+---
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## 🚨 Problem Statement
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-=======
-# fixit-jo
->>>>>>> 4e479143b99b6bd52bcd860a10bf99cf184f9626
+Citizens in Amman face significant challenges in finding qualified and reliable technicians for home maintenance services. The absence of a unified digital platform leads to:
+
+- Difficulty finding available and trusted technicians
+- No way to compare technicians or view their ratings
+- Technicians struggle to reach potential customers
+- Lack of transparency and trust between customers and technicians
+
+---
+
+## 🎯 Features
+
+- 📍 GPS-based technician locator
+- 🤖 AI-powered chatbot for service guidance
+- ⭐ Technician rating and review system
+- 🔐 Phone number authentication
+- 👷 Technician verification by Admin
+
+---
+
+## 👩‍💻 Team Members
+
+- Tuleen Malik Mahmoud Al-Shattel
+- Amneh Khaled Ahmed Alhemone
+- Noor Sudqi Mousa Abuirshied
+---
+
+## 👨‍🏫 Supervisors
+
+- Dr. Omar Al-Tarawneh
+- Co-Supervisor: Dr. Mejhem Al-Tarawneh
+
+---
+
+## 🛠️ Tech Stack
+
+- Flutter
+- Firebase
+- Google Maps API
+- Gemini AI API
+
+---
+
+## 🏫 University
+
+Amman Arab University - College of Information Technology
