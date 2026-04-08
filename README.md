@@ -32,7 +32,9 @@ Citizens in Amman face significant challenges in finding qualified and reliable 
 ## 👩‍💻 Team Members
 
 - Tuleen Malik Mahmoud Al-Shattel
+toleenalshttel2018@gmail.com
 - Amneh Khaled Ahmed Alhemone
+ammonalhemone@gmail.com
 - Noor Sudqi Mousa Abuirshied
 ---
 
