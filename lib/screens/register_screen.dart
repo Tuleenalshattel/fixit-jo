@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'otp_screen.dart';
 
 enum UserType { customer, technician }
 
@@ -69,7 +70,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget buildTextField({
     required String hint,
     required IconData icon,
-    required controller,
+    required TextEditingController controller,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -252,25 +253,40 @@ class _RegisterPageState extends State<RegisterPage> {
 
               const SizedBox(height: 30),
 
-              Container(
-                width: double.infinity,
-                height: 52,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(30),
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color.fromARGB(255, 27, 128, 237),
-                      Color(0xff5bc0ff),
-                    ],
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => OtpScreen(
+                        userType: _selectedUserType,
+                        name: _nameController.text,
+                        phone: _phoneController.text,
+                        profileImage: null,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: double.infinity,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(30),
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color.fromARGB(255, 27, 128, 237),
+                        Color(0xff5bc0ff),
+                      ],
+                    ),
                   ),
-                ),
-                child: const Center(
-                  child: Text(
-                    "Register",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  child: const Center(
+                    child: Text(
+                      "Create Account",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
