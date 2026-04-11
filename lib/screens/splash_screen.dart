@@ -16,13 +16,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   void initState() {
     super.initState();
 
-    // مدة الشاشة 3 ثواني
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
     )..forward();
 
-    // بعد 3 ثواني الانتقال للـ LoginPage
     Timer(const Duration(seconds: 3), () {
       Navigator.pushReplacement(
         context,
