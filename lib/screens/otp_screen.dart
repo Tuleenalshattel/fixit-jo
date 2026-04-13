@@ -190,7 +190,6 @@ class _OtpScreenState extends State<OtpScreen> {
 
             const Spacer(),
 
-            // ✅ BLUE GRADIENT BUTTON
             SizedBox(
               width: double.infinity,
               height: 60,
