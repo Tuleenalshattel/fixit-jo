@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:fixitjo_app/screen/register_screen.dart';
+import 'package:fixitjo_app/screen/techinical_screen_home.dart';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
-import 'register_screen.dart';
+import 'technician_home_screen.dart';
 
 class OtpScreen extends StatefulWidget {
   final UserType userType;
@@ -87,11 +89,19 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   void goNext() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const HomePage()),
-      (route) => false,
-    );
+    if (widget.userType == UserType.customer) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const HomePage()),
+        (route) => false,
+      );
+    } else {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const TechnicianHomePage()),
+        (route) => false,
+      );
+    }
   }
 
   @override
@@ -158,21 +168,11 @@ class _OtpScreenState extends State<OtpScreen> {
 
             const SizedBox(height: 10),
 
-            const Text(
-              "Enter the 6-digit code sent to",
-              style: TextStyle(
+            Text(
+              "Enter the 6-digit code sent to ${widget.phone}",
+              textAlign: TextAlign.center,
+              style: const TextStyle(
                 fontSize: 16,
-                color: Colors.black87,
-              ),
-            ),
-
-            const SizedBox(height: 5),
-
-            const Text(
-              "+962 7X XXX XXXX",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
                 color: Colors.black87,
               ),
             ),
@@ -186,58 +186,21 @@ class _OtpScreenState extends State<OtpScreen> {
 
             const SizedBox(height: 30),
 
-            const Text(
-              "Didn't receive a code?",
-              style: TextStyle(color: Colors.black87),
-            ),
-
-            const SizedBox(height: 5),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  "Resend Code",
-                  style: TextStyle(
-                    color: Color(0xFF0F5D75),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  "Resend in ${seconds}s",
-                  style: const TextStyle(color: Colors.black54),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            if (widget.userType == UserType.technician)
-              Column(
-                children: [
-                  const SizedBox(height: 10),
-                  Image.asset(
-                    'images/techinical.png',
-                    width: 160,
-                    height: 120,
-                    fit: BoxFit.contain,
-                  ),
-                ],
-              ),
+            Text("Resend in ${seconds}s"),
 
             const Spacer(),
 
+            // ✅ BLUE GRADIENT BUTTON
             SizedBox(
               width: double.infinity,
               height: 60,
               child: ElevatedButton(
                 onPressed: goNext,
                 style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.zero,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
-                  padding: EdgeInsets.zero,
                 ),
                 child: Ink(
                   decoration: const BoxDecoration(
@@ -261,33 +224,6 @@ class _OtpScreenState extends State<OtpScreen> {
                   ),
                 ),
               ),
-            ),
-
-            const SizedBox(height: 20),
-
-            const Text.rich(
-              TextSpan(
-                text: "By verifying, you agree to our ",
-                style: TextStyle(color: Colors.black54),
-                children: [
-                  TextSpan(
-                    text: "Terms of Service",
-                    style: TextStyle(
-                      decoration: TextDecoration.underline,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  TextSpan(text: " and "),
-                  TextSpan(
-                    text: "Privacy Policy.",
-                    style: TextStyle(
-                      decoration: TextDecoration.underline,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ],
-              ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),
