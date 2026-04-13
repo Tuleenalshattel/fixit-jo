@@ -1,132 +1,366 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
-import 'register_screen.dart';
+import 'profile_screen.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  void goToLogin(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const LoginPage(),
-      ),
-    );
-  }
-
-  void goToRegister(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const RegisterPage(),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF2196F3),
-              Color(0xFF64B5F6),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(25),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+      backgroundColor: const Color(0xFFF5F7FA),
 
-                const Icon(
-                  Icons.home_repair_service,
-                  size: 120,
-                  color: Colors.white,
-                ),
-
-                const SizedBox(height: 20),
-
-                const Text(
-                  "FixItJo",
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        title: Row(
+          children: [
+            const CircleAvatar(
+              radius: 20,
+              backgroundImage: AssetImage('images/user.png'),
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  "WELCOME BACK",
                   style: TextStyle(
-                    fontSize: 38,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    fontSize: 10,
+                    color: Color(0xFF1E88E5),
                   ),
                 ),
-
-                const SizedBox(height: 10),
-
-                const Text(
-                  "Find trusted technicians near you",
+                Text(
+                  "Hello, Omar",
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.white70,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-
-                const SizedBox(height: 60),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () {
-                      goToLogin(context);
-                    },
-                    child: const Text(
-                      "Login",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 15),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.white),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () {
-                      goToRegister(context);
-                    },
-                    child: const Text(
-                      "Register",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    color: Color(0xFF1E88E5),
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
+            const Spacer(),
+            const Text(
+              "FixIt Jo",
+              style: TextStyle(
+                color: Color(0xFF1E88E5),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        actions: const [
+          Icon(Icons.notifications_none, color: Color(0xFF1E88E5)),
+          SizedBox(width: 10),
+        ],
+      ),
+
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(30),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF1E88E5), Color(0xFF42A5F5)],
+                ),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    "Need a fix?",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    "Find the best pros in seconds.",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  SizedBox(height: 20),
+                  _SearchBox(),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const [
+                Text(
+                  "Service Categories",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E88E5),
+                  ),
+                ),
+                Text(
+                  "View all",
+                  style: TextStyle(color: Color(0xFF1E88E5)),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 15),
+
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              childAspectRatio: 1.2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              children: [
+                buildCategory(Icons.plumbing, "Plumbing"),
+                buildCategory(Icons.electrical_services, "Electrical"),
+                buildCategory(Icons.handyman, "Carpentry"),
+                buildCategory(Icons.ac_unit, "AC Repair"),
+              ],
+            ),
+
+            const SizedBox(height: 25),
+
+            const Text(
+              "Ongoing Requests",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E88E5),
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 25,
+                    backgroundImage: AssetImage('images/ac.png.jpg'),
+                  ),
+                  const SizedBox(width: 10),
+
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("AC Maintenance",
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        SizedBox(height: 5),
+                        Text("Professional: Mike's Cooling",
+                            style: TextStyle(color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade100,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      "IN PROGRESS",
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.orange,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const [
+                Text(
+                  "Nearby Technicians",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E88E5),
+                  ),
+                ),
+                Text(
+                  "Map view",
+                  style: TextStyle(color: Color(0xFF1E88E5)),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 15),
+
+            buildTechnician(
+              "Mohammad Saleh",
+              "Master Electrician • 1.2km",
+              "4.9",
+              "images/mohammad.png.png",
+            ),
+
+            buildTechnician(
+              "Yousef Ahmad",
+              "Interior Painter • 2.5km",
+              "4.8",
+              "images/yousef.png.png",
+            ),
+          ],
+        ),
+      ),
+
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFF1E88E5),
+        child: const Icon(Icons.add),
+        onPressed: () {},
+      ),
+
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+
+      bottomNavigationBar: BottomNavigationBar(
+        selectedItemColor: const Color(0xFF1E88E5),
+        unselectedItemColor: Colors.grey,
+        currentIndex: 0,
+        onTap: (index) {
+          if (index == 4) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProfilePage(
+                  name: "Omar Hassan",
+                  phone: "+9627XXXXXXX",
+                  userType: "Customer",
+                ),
+              ),
+            );
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.add), label: "Request"),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: "Map"),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+        ],
+      ),
+    );
+  }
+
+  Widget buildCategory(IconData icon, String title) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircleAvatar(
+            backgroundColor: Colors.blue.shade100,
+            child: Icon(icon, color: Colors.blue),
           ),
+          const SizedBox(height: 10),
+          Text(title),
+        ],
+      ),
+    );
+  }
+
+  Widget buildTechnician(
+      String name,
+      String job,
+      String rating,
+      String imagePath,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundImage: AssetImage(imagePath),
+          ),
+
+          const SizedBox(width: 10),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.verified,
+                      color: Color(0xFF1E88E5),
+                      size: 18,
+                    ),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        name,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(job, style: const TextStyle(color: Colors.grey)),
+              ],
+            ),
+          ),
+
+          Row(
+            children: [
+              const Icon(Icons.star, color: Colors.orange, size: 18),
+              Text(rating),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SearchBox extends StatelessWidget {
+  const _SearchBox();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: const TextField(
+        decoration: InputDecoration(
+          icon: Icon(Icons.search),
+          hintText: "Search for electrical, plumbing...",
+          border: InputBorder.none,
         ),
       ),
     );
