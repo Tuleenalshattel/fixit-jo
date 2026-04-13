@@ -323,7 +323,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 8),
 
                 buildTextField(
-                  hint: "John Doe",
+                  hint: "Omar Hassan",
                   icon: Icons.person,
                   controller: _nameController,
                 ),
@@ -520,10 +520,3 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 }
-              
-
-             
-                      
-                   
-                
-                  
