@@ -9,7 +9,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
@@ -44,11 +45,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image.asset(
-            'images/logo1.jpeg',
-            width: 300,
-            height: 300,
-          ),
+          Image.asset('images/logo1.png', width: 300, height: 300),
           const SizedBox(height: 30),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 50.0),
@@ -62,11 +59,17 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   valueColor: _controller.drive(
                     TweenSequence<Color?>([
                       TweenSequenceItem(
-                        tween: ColorTween(begin: Colors.lightBlueAccent, end: Colors.blueAccent),
+                        tween: ColorTween(
+                          begin: Colors.lightBlueAccent,
+                          end: Colors.blueAccent,
+                        ),
                         weight: 50,
                       ),
                       TweenSequenceItem(
-                        tween: ColorTween(begin: Colors.blueAccent, end: Colors.blue),
+                        tween: ColorTween(
+                          begin: Colors.blueAccent,
+                          end: Colors.blue,
+                        ),
                         weight: 50,
                       ),
                     ]),

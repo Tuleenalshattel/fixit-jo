@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:fixitjo_app/screen/register_screen.dart';
+import 'package:fixitjo_app/screens/register_screen.dart';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 
@@ -30,7 +30,6 @@ class OtpScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-
             const SizedBox(height: 40),
 
             const Text(
@@ -58,21 +57,18 @@ class OtpScreen extends StatelessWidget {
                   backgroundColor: const Color(0xFF2F80ED),
                 ),
                 onPressed: () {
-
                   // 🔥 هون بنحدد حسب نوع المستخدم
                   if (userType == UserType.customer) {
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => const HomePage(),
-                      ),
+                      MaterialPageRoute(builder: (context) => const HomePage()),
                       (route) => false,
                     );
                   } else {
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const HomePage(), 
+                        builder: (context) => const HomePage(),
                         // لاحقًا نخليها TechnicianDashboard()
                       ),
                       (route) => false,
