@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
+import 'edit_profile_customer.dart';
+import 'settings_customer.dart';
 
 class ProfilePage extends StatelessWidget {
   final String name;
@@ -26,7 +28,6 @@ class ProfilePage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-
                   const SizedBox(width: 48),
 
                   const Expanded(
@@ -42,10 +43,17 @@ class ProfilePage extends StatelessWidget {
                     ),
                   ),
 
-                  IconButton(
+                 IconButton(
                     icon: const Icon(Icons.settings, color: Colors.blue),
-                    onPressed: () {},
-                  ),
+                   onPressed: () {
+                     Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                      builder: (context) => const SettingsScreen(),
+                    ),
+                  );
+                },
+              ),
                 ],
               ),
             ),
@@ -106,11 +114,7 @@ class ProfilePage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => EditProfilePage(
-                        name: name,
-                        phone: phone,
-                        userType: userType,
-                      ),
+                      builder: (context) => EditProfileScreen(),
                     ),
                   );
                 },
@@ -202,11 +206,11 @@ class ProfilePage extends StatelessWidget {
                 onPressed: () {
                   Navigator.pushAndRemoveUntil(
                     context,
-                   MaterialPageRoute(
-                     builder: (context) => const LoginPage(),
+                    MaterialPageRoute(
+                      builder: (context) => const LoginPage(),
                     ),
                     (route) => false,
-                 );
+                  );
                 },
                 icon: const Icon(Icons.logout, color: Colors.red),
                 label: const Text(
@@ -239,7 +243,6 @@ class ProfilePage extends StatelessWidget {
     );
   }
 }
-
 
 class RequestItem extends StatelessWidget {
   final String title;
@@ -301,40 +304,4 @@ class RequestItem extends StatelessWidget {
       ),
     );
   }
-}
-
-
-class DummyLogin extends StatelessWidget {
-  const DummyLogin({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text("Login Screen")),
-    );
-  }
-}
-
-
-class EditProfilePage extends StatelessWidget {
-  final String name;
-  final String phone;
-  final String userType;
-
-  const EditProfilePage({
-    super.key,
-    required this.name,
-    required this.phone,
-    required this.userType,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Edit Profile")),
-      body: const Center(
-        child: Text("Edit Profile Page"),
-      ),
-    );
-  }
-}
+}            
