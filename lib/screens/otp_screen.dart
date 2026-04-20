@@ -1,22 +1,27 @@
 import 'dart:async';
-import 'dart:io';
-import 'package:fixitjo_app/screens/register_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'home_screen.dart';
 import 'technician_home_screen.dart';
 
 class OtpScreen extends StatefulWidget {
-  final UserType userType;
+  final String verificationId;
+  final String phoneNumber;
   final String name;
-  final String phone;
-  final File? profileImage;
+  final String role;
+  final List<String> specializations;
+  final int experience;
 
   const OtpScreen({
     super.key,
-    required this.userType,
+    required this.verificationId,
+    required this.phoneNumber,
     required this.name,
-    required this.phone,
-    this.profileImage,
+    required this.role,
+    this.specializations = const [],
+    this.experience = 0,
   });
 
   @override
@@ -24,13 +29,16 @@ class OtpScreen extends StatefulWidget {
 }
 
 class _OtpScreenState extends State<OtpScreen> {
-  List<TextEditingController> controllers = List.generate(
+  final List<TextEditingController> controllers = List.generate(
     6,
     (_) => TextEditingController(),
   );
 
+  final List<FocusNode> focusNodes = List.generate(6, (_) => FocusNode());
+
   int seconds = 30;
   Timer? timer;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -43,167 +51,167 @@ class _OtpScreenState extends State<OtpScreen> {
       if (seconds == 0) {
         t.cancel();
       } else {
-        setState(() {
-          seconds--;
-        });
+        setState(() => seconds--);
       }
     });
   }
 
-  Widget buildOtpBox(int index) {
-    return Container(
-      width: 55,
-      height: 60,
-      margin: const EdgeInsets.symmetric(horizontal: 5),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.grey.shade200,
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          TextField(
-            controller: controllers[index],
-            keyboardType: TextInputType.number,
-            textAlign: TextAlign.center,
-            maxLength: 1,
-            style: const TextStyle(color: Colors.transparent),
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              counterText: "",
-            ),
-            onChanged: (_) => setState(() {}),
-          ),
-          Text(
-            controllers[index].text.isEmpty ? "-" : controllers[index].text,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  String getOtp() => controllers.map((c) => c.text).join();
 
-  void goNext() {
-    if (widget.userType == UserType.customer) {
-      Navigator.pushAndRemoveUntil(
+  Future<void> verifyOtp() async {
+    final otp = getOtp();
+
+    if (otp.length < 6) {
+      ScaffoldMessenger.of(
         context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
-        (route) => false,
+      ).showSnackBar(const SnackBar(content: Text("Enter 6-digit code")));
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: widget.verificationId,
+        smsCode: otp,
       );
-    } else {
-      Navigator.pushAndRemoveUntil(
+
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(
+        credential,
+      );
+
+      final uid = userCredential.user!.uid;
+
+      /// 1. Save user FIRST
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'name': widget.name,
+        'phone': widget.phoneNumber,
+        'role': widget.role,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      /// 2. If technician save extra data
+      if (widget.role == 'technician') {
+        await FirebaseFirestore.instance
+            .collection('technicians')
+            .doc(uid)
+            .set({
+              'name': widget.name,
+              'phone': widget.phoneNumber,
+              'specializations': widget.specializations,
+              'experience': widget.experience,
+              'isVerified': false,
+              'ratingAverage': 0.0,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+      }
+
+      if (!mounted) return;
+
+      /// 3. Navigate ONCE only
+      if (widget.role == 'technician') {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const TechnicianHomeScreen()),
+          (route) => false,
+        );
+      } else {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+
+      ScaffoldMessenger.of(
         context,
-        MaterialPageRoute(
-          builder: (_) => const HomePage(),
-        ), //MaterialPageRoute(builder: (_) => const TechnicianHomePage()),
-        (route) => false,
-      );
+      ).showSnackBar(const SnackBar(content: Text("Invalid OTP")));
     }
   }
 
   @override
   void dispose() {
     timer?.cancel();
+    for (var c in controllers) c.dispose();
+    for (var f in focusNodes) f.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    const boxSize = 45.0;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F7),
+
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: const BackButton(color: Colors.black),
+        title: const Text("OTP Verification"),
         centerTitle: true,
-        title: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.build, color: Color(0xFF0F5D75)),
-            SizedBox(width: 8),
-            Text(
-              "FixIt Jo",
-              style: TextStyle(
-                color: Color(0xFF0F5D75),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            const SizedBox(height: 30),
-            Container(
-              width: 110,
-              height: 110,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFFB0D3E0),
+
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+
+              Text(
+                "Enter code sent to ${widget.phoneNumber}",
+                textAlign: TextAlign.center,
               ),
-              child: const Icon(
-                Icons.build,
-                size: 40,
-                color: Color(0xFF0F5D75),
+
+              const SizedBox(height: 30),
+
+              /// OTP BOXES
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: List.generate(6, (index) {
+                  return SizedBox(
+                    width: boxSize,
+                    child: TextField(
+                      controller: controllers[index],
+                      focusNode: focusNodes[index],
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
+                      maxLength: 1,
+                      decoration: const InputDecoration(counterText: ""),
+                      onChanged: (value) {
+                        if (value.isNotEmpty && index < 5) {
+                          focusNodes[index + 1].requestFocus();
+                        } else if (value.isEmpty && index > 0) {
+                          focusNodes[index - 1].requestFocus();
+                        }
+                      },
+                    ),
+                  );
+                }),
               ),
-            ),
-            const SizedBox(height: 30),
-            const Text(
-              "Verify Your Number",
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              "Enter the 6-digit code sent to ${widget.phone}",
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, color: Colors.black87),
-            ),
-            const SizedBox(height: 30),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(6, (index) => buildOtpBox(index)),
-            ),
-            const SizedBox(height: 30),
-            Text("Resend in ${seconds}s"),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              height: 60,
-              child: ElevatedButton(
-                onPressed: goNext,
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                child: Ink(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF0F5D75), Color(0xFF4FA3C7)],
-                    ),
-                    borderRadius: BorderRadius.all(Radius.circular(30)),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      "Verify →",
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+
+              const SizedBox(height: 20),
+
+              Text("Resend in $seconds s"),
+
+              const SizedBox(height: 40),
+
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : verifyOtp,
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text("Verify"),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -14,10 +14,8 @@ class LoginPage extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               children: [
-
                 const SizedBox(height: 20),
 
-                
                 Row(
                   children: const [
                     Icon(Icons.build, color: Color(0xFF2F80ED)),
@@ -28,7 +26,7 @@ class LoginPage extends StatelessWidget {
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
-                    )
+                    ),
                   ],
                 ),
 
@@ -37,11 +35,11 @@ class LoginPage extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(28),
                   decoration: BoxDecoration(
-                    color: Color(0xFFEAF2FF),  
+                    color: Color(0xFFEAF2FF),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
-                    Icons.handyman, 
+                    Icons.handyman,
                     size: 45,
                     color: Color(0xFF2F80ED),
                   ),
@@ -51,20 +49,14 @@ class LoginPage extends StatelessWidget {
 
                 const Text(
                   "Welcome back",
-                  style: TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 10),
 
                 const Text(
                   "Enter your mobile number to start fixing.",
-                  style: TextStyle(
-                    color: Color(0xFF4F4F4F), 
-                    fontSize: 15,
-                  ),
+                  style: TextStyle(color: Color(0xFF4F4F4F), fontSize: 15),
                 ),
 
                 const SizedBox(height: 30),
@@ -78,18 +70,17 @@ class LoginPage extends StatelessWidget {
                       BoxShadow(
                         color: Colors.grey.withOpacity(0.15),
                         blurRadius: 10,
-                      )
+                      ),
                     ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
                       const Text(
                         "MOBILE NUMBER",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87, 
+                          color: Colors.black87,
                         ),
                       ),
 
@@ -103,11 +94,10 @@ class LoginPage extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-
                             const Text(
                               "+962",
                               style: TextStyle(
-                                color: Colors.black, 
+                                color: Colors.black,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -117,9 +107,7 @@ class LoginPage extends StatelessWidget {
                             Expanded(
                               child: TextField(
                                 keyboardType: TextInputType.phone,
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                ),
+                                style: const TextStyle(color: Colors.black),
                                 decoration: const InputDecoration(
                                   hintText: "7X XXX XXXX",
                                   hintStyle: TextStyle(
@@ -128,7 +116,7 @@ class LoginPage extends StatelessWidget {
                                   border: InputBorder.none,
                                 ),
                               ),
-                            )
+                            ),
                           ],
                         ),
                       ),
@@ -149,10 +137,7 @@ class LoginPage extends StatelessWidget {
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                "Send OTP",
-                                style: TextStyle(fontSize: 16),
-                              ),
+                              Text("Send OTP", style: TextStyle(fontSize: 16)),
                               SizedBox(width: 10),
                               Icon(Icons.arrow_forward),
                             ],
@@ -174,7 +159,7 @@ class LoginPage extends StatelessWidget {
                           ),
                           Expanded(child: Divider()),
                         ],
-                      )
+                      ),
                     ],
                   ),
                 ),
@@ -201,7 +186,7 @@ class LoginPage extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                    )
+                    ),
                   ],
                 ),
 

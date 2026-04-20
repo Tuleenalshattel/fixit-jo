@@ -5,8 +5,15 @@ import 'profile_customer_screen.dart';
 import 'request_service_screen.dart';
 import 'package:fixitjo_app/screens/notification_screen.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  String searchText = "";
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +31,7 @@ class HomePage extends StatelessWidget {
               backgroundImage: AssetImage('images/user.png'),
             ),
             const SizedBox(width: 10),
+
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
@@ -32,7 +40,7 @@ class HomePage extends StatelessWidget {
                   style: TextStyle(fontSize: 10, color: Color(0xFF1E88E5)),
                 ),
                 Text(
-                  "Hello, Omar",
+                  "Hello",
                   style: TextStyle(
                     fontSize: 16,
                     color: Color(0xFF1E88E5),
@@ -41,7 +49,9 @@ class HomePage extends StatelessWidget {
                 ),
               ],
             ),
+
             const Spacer(),
+
             const Text(
               "FixIt Jo",
               style: TextStyle(
@@ -51,6 +61,7 @@ class HomePage extends StatelessWidget {
             ),
           ],
         ),
+
         actions: [
           IconButton(
             icon: const Icon(
@@ -75,6 +86,7 @@ class HomePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            /// 🔵 TOP BOX + SEARCH
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(30),
@@ -85,8 +97,8 @@ class HomePage extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
+                children: [
+                  const Text(
                     "Need a fix?",
                     style: TextStyle(
                       color: Colors.white,
@@ -94,19 +106,28 @@ class HomePage extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 8),
-                  Text(
+                  const SizedBox(height: 8),
+                  const Text(
                     "Find the best pros in seconds.",
                     style: TextStyle(color: Colors.white70),
                   ),
-                  SizedBox(height: 20),
-                  _SearchBox(),
+                  const SizedBox(height: 20),
+
+                  /// 🔍 SEARCH
+                  _SearchBox(
+                    onChanged: (value) {
+                      setState(() {
+                        searchText = value.toLowerCase();
+                      });
+                    },
+                  ),
                 ],
               ),
             ),
 
             const SizedBox(height: 20),
 
+            /// 🔧 SERVICES
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: const [
@@ -132,15 +153,23 @@ class HomePage extends StatelessWidget {
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
               children: [
-                buildCategory(Icons.plumbing, "Plumbing"),
-                buildCategory(Icons.electrical_services, "Electrical"),
-                buildCategory(Icons.handyman, "Carpentry"),
-                buildCategory(Icons.ac_unit, "AC Repair"),
+                if ("plumbing".contains(searchText))
+                  buildCategory(Icons.plumbing, "Plumbing"),
+
+                if ("electrical".contains(searchText))
+                  buildCategory(Icons.electrical_services, "Electrical"),
+
+                if ("carpentry".contains(searchText))
+                  buildCategory(Icons.handyman, "Carpentry"),
+
+                if ("ac repair".contains(searchText))
+                  buildCategory(Icons.ac_unit, "AC Repair"),
               ],
             ),
 
             const SizedBox(height: 25),
 
+            /// باقي الكود زي ما هو 👇
             const Text(
               "Ongoing Requests",
               style: TextStyle(
@@ -204,50 +233,9 @@ class HomePage extends StatelessWidget {
                 ],
               ),
             ),
-
-            const SizedBox(height: 20),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Text(
-                  "Nearby Technicians",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E88E5),
-                  ),
-                ),
-                Text("Map view", style: TextStyle(color: Color(0xFF1E88E5))),
-              ],
-            ),
-
-            const SizedBox(height: 15),
-
-            buildTechnician(
-              "Mohammad Saleh",
-              "Master Electrician • 1.2km",
-              "4.9",
-              "images/mohammad.png.png",
-            ),
-
-            buildTechnician(
-              "Yousef Ahmad",
-              "Interior Painter • 2.5km",
-              "4.8",
-              "images/yousef.png.png",
-            ),
           ],
         ),
       ),
-
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF1E88E5),
-        child: const Icon(Icons.add),
-        onPressed: () {},
-      ),
-
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: const Color(0xFF1E88E5),
@@ -278,11 +266,8 @@ class HomePage extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ProfilePage(
-                  name: "Omar Hassan",
-                  phone: "+9627XXXXXXX",
-                  userType: "Customer",
-                ),
+                builder: (context) =>
+                    ProfilePage(name: "User", phone: "", userType: "Customer"),
               ),
             );
           }
@@ -317,66 +302,12 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
-
-  Widget buildTechnician(
-    String name,
-    String job,
-    String rating,
-    String imagePath,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(radius: 28, backgroundImage: AssetImage(imagePath)),
-
-          const SizedBox(width: 10),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.verified,
-                      color: Color(0xFF1E88E5),
-                      size: 18,
-                    ),
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: Text(
-                        name,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                Text(job, style: const TextStyle(color: Colors.grey)),
-              ],
-            ),
-          ),
-
-          Row(
-            children: [
-              const Icon(Icons.star, color: Colors.orange, size: 18),
-              Text(rating),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _SearchBox extends StatelessWidget {
-  const _SearchBox();
+  final Function(String) onChanged;
+
+  const _SearchBox({required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -386,8 +317,9 @@ class _SearchBox extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(30),
       ),
-      child: const TextField(
-        decoration: InputDecoration(
+      child: TextField(
+        onChanged: onChanged,
+        decoration: const InputDecoration(
           icon: Icon(Icons.search),
           hintText: "Search for electrical, plumbing...",
           border: InputBorder.none,

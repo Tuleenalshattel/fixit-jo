@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'otp_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 
 enum UserType { customer, technician }
 
@@ -13,7 +14,6 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-
   UserType _selectedUserType = UserType.customer;
 
   final TextEditingController _nameController = TextEditingController();
@@ -26,10 +26,7 @@ class _RegisterPageState extends State<RegisterPage> {
   List<String> selectedSpecializations = [];
 
   Future pickImage() async {
-
-    final picked = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-    );
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
 
     if (picked != null) {
       setState(() {
@@ -43,11 +40,9 @@ class _RegisterPageState extends State<RegisterPage> {
     required IconData icon,
     required UserType type,
   }) {
-
     bool selected = _selectedUserType == type;
 
-    Color color =
-        type == UserType.customer ? Colors.blue : Colors.teal;
+    Color color = type == UserType.customer ? Colors.blue : Colors.teal;
 
     return Expanded(
       child: GestureDetector(
@@ -68,11 +63,7 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
           child: Column(
             children: [
-              Icon(
-                icon,
-                size: 32,
-                color: selected ? color : Colors.grey,
-              ),
+              Icon(icon, size: 32, color: selected ? color : Colors.grey),
               const SizedBox(height: 6),
               Text(
                 text,
@@ -80,7 +71,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   fontWeight: FontWeight.w600,
                   color: selected ? color : Colors.black87,
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -111,22 +102,17 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Widget buildSpecialization(String text, IconData icon) {
-
     bool selected = selectedSpecializations.contains(text);
 
     return GestureDetector(
       onTap: () {
-
         setState(() {
-
           if (selected) {
             selectedSpecializations.remove(text);
           } else {
             selectedSpecializations.add(text);
           }
-
         });
-
       },
       child: Container(
         width: 160,
@@ -142,13 +128,11 @@ class _RegisterPageState extends State<RegisterPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-
             Icon(icon, size: 30),
 
             const SizedBox(height: 8),
 
-            Text(text)
-
+            Text(text),
           ],
         ),
       ),
@@ -157,7 +141,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: Colors.white,
 
@@ -167,50 +150,47 @@ class _RegisterPageState extends State<RegisterPage> {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               children: [
-
                 const SizedBox(height: 10),
 
-               Row(
-  children: [
-
-    IconButton(
-      icon: const Icon(Icons.arrow_back),
-      onPressed: () {
-        Navigator.pop(context);
-      },
-    ),
-
-    Expanded(
-      child: Center(
-        child: _selectedUserType == UserType.customer
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.build, size: 18),
-                  SizedBox(width: 6),
-                  Text(
-                    "FixIt Jo",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
                     ),
-                  ),
-                ],
-              )
-            : const Text(
-                "Digital Concierge",
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
+
+                    Expanded(
+                      child: Center(
+                        child: _selectedUserType == UserType.customer
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Icon(Icons.build, size: 18),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    "FixIt Jo",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : const Text(
+                                "Digital Concierge",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                ),
+                              ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 40),
+                  ],
                 ),
-              ),
-      ),
-    ),
-
-    const SizedBox(width: 40),
-
-  ],
-),
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 120),
                   height: 2,
@@ -226,33 +206,24 @@ class _RegisterPageState extends State<RegisterPage> {
                     color: Color(0xff3fa9f5),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.build,
-                    color: Colors.white,
-                  ),
+                  child: const Icon(Icons.build, color: Colors.white),
                 ),
 
                 const SizedBox(height: 20),
 
                 const Text(
                   "Create an Account",
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 5),
 
                 const Text(
                   "Join FixIt Jo and start growing your business.",
-                  style: TextStyle(
-                    color: Colors.black54,
-                  ),
+                  style: TextStyle(color: Colors.black54),
                 ),
 
                 if (_selectedUserType == UserType.technician) ...[
-
                   const SizedBox(height: 25),
 
                   GestureDetector(
@@ -260,8 +231,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     child: CircleAvatar(
                       radius: 45,
                       backgroundColor: Colors.grey[200],
-                      backgroundImage:
-                          profileImage != null ? FileImage(profileImage!) : null,
+                      backgroundImage: profileImage != null
+                          ? FileImage(profileImage!)
+                          : null,
                       child: profileImage == null
                           ? const Icon(Icons.camera_alt, size: 30)
                           : null,
@@ -279,7 +251,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     "Recommended: Clear face photo in daylight.",
                     style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
-
                 ],
 
                 const SizedBox(height: 25),
@@ -296,7 +267,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 Row(
                   children: [
-
                     buildUserCard(
                       text: "Customer",
                       icon: Icons.person_outline,
@@ -344,12 +314,10 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
 
                 if (_selectedUserType == UserType.technician) ...[
-
                   const SizedBox(height: 25),
 
                   Row(
                     children: const [
-
                       Text(
                         "Specialization",
                         style: TextStyle(fontWeight: FontWeight.bold),
@@ -359,12 +327,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       Text(
                         "SELECT MULTIPLE",
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey,
-                        ),
-                      )
-
+                        style: TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
                     ],
                   ),
 
@@ -374,13 +338,11 @@ class _RegisterPageState extends State<RegisterPage> {
                     spacing: 12,
                     runSpacing: 12,
                     children: [
-
                       buildSpecialization("Plumbing", Icons.plumbing),
                       buildSpecialization("Electrical", Icons.flash_on),
                       buildSpecialization("Carpentry", Icons.handyman),
                       buildSpecialization("AC Repair", Icons.ac_unit),
                       buildSpecialization("Heating", Icons.fireplace),
-
                     ],
                   ),
 
@@ -388,7 +350,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   Row(
                     children: [
-
                       const Text(
                         "Years of Experience",
                         style: TextStyle(fontWeight: FontWeight.bold),
@@ -398,7 +359,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xff1f8fa8),
                           borderRadius: BorderRadius.circular(20),
@@ -407,8 +370,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           "${experience.round()}+",
                           style: const TextStyle(color: Colors.white),
                         ),
-                      )
-
+                      ),
                     ],
                   ),
 
@@ -436,20 +398,45 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 30),
 
                 GestureDetector(
-                  onTap: () {
+                  onTap: () async {
+                    if (_nameController.text.isEmpty ||
+                        _phoneController.text.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Please fill all fields")),
+                      );
+                      return;
+                    }
 
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => OtpScreen(
-                          userType: _selectedUserType,
-                          name: _nameController.text,
-                          phone: _phoneController.text,
-                          profileImage: profileImage,
-                        ),
-                      ),
+                    final phone = "+962${_phoneController.text.trim()}";
+
+                    await FirebaseAuth.instance.verifyPhoneNumber(
+                      phoneNumber: phone,
+                      verificationCompleted:
+                          (PhoneAuthCredential credential) {},
+                      verificationFailed: (FirebaseAuthException e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Error: ${e.message}")),
+                        );
+                      },
+                      codeSent: (String verificationId, int? resendToken) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OtpScreen(
+                              verificationId: verificationId,
+                              phoneNumber: phone,
+                              name: _nameController.text.trim(),
+                              role: _selectedUserType == UserType.technician
+                                  ? 'technician'
+                                  : 'customer',
+                              specializations: selectedSpecializations,
+                              experience: experience.round(),
+                            ),
+                          ),
+                        );
+                      },
+                      codeAutoRetrievalTimeout: (String verificationId) {},
                     );
-
                   },
                   child: Container(
                     width: double.infinity,
@@ -457,10 +444,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(30),
                       gradient: const LinearGradient(
-                        colors: [
-                          Color(0xff1d8fff),
-                          Color(0xff63c6ff),
-                        ],
+                        colors: [Color(0xff1d8fff), Color(0xff63c6ff)],
                       ),
                     ),
                     child: const Center(
@@ -488,13 +472,12 @@ class _RegisterPageState extends State<RegisterPage> {
                           color: Colors.blue,
                           fontWeight: FontWeight.bold,
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),
 
                 if (_selectedUserType == UserType.technician) ...[
-
                   const SizedBox(height: 25),
 
                   const Text(
@@ -511,7 +494,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ],
 
                 const SizedBox(height: 20),
-
               ],
             ),
           ),

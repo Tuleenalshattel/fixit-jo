@@ -2,15 +2,14 @@ import 'package:fixitjo_app/screens/map_screen.dart';
 import 'package:fixitjo_app/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'screens/chatbot_screen.dart';
-import 'screens/splash_screen.dart';
-//import 'package:firebase_core/firebase_core.dart';
 import 'screens/notification_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  //await Firebase.initializeApp();
-  //await FirebaseService.initialize();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   Gemini.init(apiKey: 'AIzaSyDELQbUOhChvv1ueGe5XAGXZFZwvFh1qG4');
   runApp(const MyApp());
 }
