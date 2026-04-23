@@ -86,7 +86,6 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// 🔵 TOP BOX + SEARCH
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(30),
@@ -113,7 +112,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 20),
 
-                  /// 🔍 SEARCH
                   _SearchBox(
                     onChanged: (value) {
                       setState(() {
@@ -127,7 +125,6 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 20),
 
-            /// 🔧 SERVICES
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: const [
@@ -169,7 +166,6 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 25),
 
-            /// باقي الكود زي ما هو 👇
             const Text(
               "Ongoing Requests",
               style: TextStyle(
