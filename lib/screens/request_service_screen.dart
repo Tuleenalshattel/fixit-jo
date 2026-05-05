@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:geolocator/geolocator.dart';
 
 class RequestServiceScreen extends StatefulWidget {
   const RequestServiceScreen({super.key});
@@ -22,7 +25,42 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
     {'name': 'AC Repair', 'icon': Icons.ac_unit},
   ];
 
-  final LatLng _location = const LatLng(31.9554, 35.9454);
+  LatLng _location = const LatLng(31.9554, 35.9454);
+  final MapController _mapController = MapController();
+  Future<void> _getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied) return;
+    if (permission == LocationPermission.deniedForever) return;
+
+    final position = await Geolocator.getCurrentPosition();
+
+    debugPrint('LAT: ${position.latitude}, LNG: ${position.longitude}');
+
+    final newLocation = LatLng(position.latitude, position.longitude);
+
+    setState(() {
+      _location = newLocation;
+    });
+
+    _mapController.move(newLocation, 15);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -188,6 +226,7 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: FlutterMap(
+                  mapController: _mapController,
                   options: MapOptions(
                     initialCenter: _location,
                     initialZoom: 15,
@@ -220,14 +259,14 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
               ),
             ),
             const SizedBox(height: 8),
+            Text(
+              'Lat: ${_location.latitude.toStringAsFixed(4)} , Lng:${_location.longitude.toStringAsFixed(4)}',
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
             Row(
               children: const [
                 Icon(Icons.location_on, color: Colors.grey, size: 16),
                 SizedBox(width: 4),
-                Text(
-                  'Al-Madina Al-Munawwara St, Amman',
-                  style: TextStyle(color: Colors.black54, fontSize: 13),
-                ),
               ],
             ),
 
@@ -299,7 +338,71 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                onPressed: () {},
+
+                onPressed: () async {
+                  final user = FirebaseAuth.instance.currentUser;
+
+                  if (user == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('User not logged in')),
+                    );
+                    return;
+                  }
+
+                  final userDoc = await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .get();
+
+                  final userData = userDoc.data();
+                  final customerName = userData?['name'] ?? 'Customer';
+
+                  if (_descriptionController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please enter description')),
+                    );
+                    return;
+                  }
+
+                  try {
+                    final nearestTechnicianId = await findNearestTechnician();
+
+                    if (nearestTechnicianId == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('No available technician found'),
+                        ),
+                      );
+                      return;
+                    }
+                    await FirebaseFirestore.instance
+                        .collection('service_requests')
+                        .add({
+                          'customerId': user.uid,
+                          'customerName': customerName,
+                          'technicianId': nearestTechnicianId,
+                          'category': _selectedService,
+                          'description': _descriptionController.text.trim(),
+                          'status': 'pending',
+                          'latitude': _location.latitude,
+                          'longitude': _location.longitude,
+                          'createdAt': FieldValue.serverTimestamp(),
+                        });
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Request submitted successfully'),
+                      ),
+                    );
+
+                    _descriptionController.clear();
+                    Navigator.pop(context);
+                  } catch (e) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                },
                 child: Ink(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
@@ -340,5 +443,43 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
         ],
       ),
     );
+  }
+
+  Future<String?> findNearestTechnician() async {
+    final techniciansSnapshot = await FirebaseFirestore.instance
+        .collection('technicians')
+        .where('available', isEqualTo: true)
+        .get();
+
+    final Distance distance = Distance();
+
+    String? nearestTechnicianId;
+    double? nearestDistance;
+
+    for (var doc in techniciansSnapshot.docs) {
+      final data = doc.data();
+
+      final List specializations = data['specializations'] ?? [];
+
+      if (!specializations.contains(_selectedService)) continue;
+
+      final double? techLat = (data['latitude'] as num?)?.toDouble();
+      final double? techLng = (data['longitude'] as num?)?.toDouble();
+
+      if (techLat == null || techLng == null) continue;
+
+      final double currentDistance = distance.as(
+        LengthUnit.Kilometer,
+        _location,
+        LatLng(techLat, techLng),
+      );
+
+      if (nearestDistance == null || currentDistance < nearestDistance) {
+        nearestDistance = currentDistance;
+        nearestTechnicianId = doc.id;
+      }
+    }
+
+    return nearestTechnicianId;
   }
 }

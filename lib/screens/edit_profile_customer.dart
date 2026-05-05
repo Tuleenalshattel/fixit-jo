@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -13,23 +15,84 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   File? _image;
   final ImagePicker _picker = ImagePicker();
 
-  Future<void> pickImage() async {
-    final pickedFile = await _picker.pickImage(
-      source: ImageSource.gallery,
-    );
+  final nameController = TextEditingController();
+  final phoneController = TextEditingController();
+  final emailController = TextEditingController();
+  final addressController = TextEditingController();
 
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserData();
+  }
+
+  Future<void> loadUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    final data = doc.data();
+
+    setState(() {
+      nameController.text = data?['name']?.toString() ?? '';
+      phoneController.text =
+          data?['phone']?.toString().replaceAll('+962', '') ?? '';
+      emailController.text = data?['email']?.toString() ?? '';
+      addressController.text = data?['address']?.toString() ?? 'Amman, Jordan';
+      isLoading = false;
+    });
+  }
+
+  Future<void> saveChanges() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      'name': nameController.text.trim(),
+      'phone': '+962${phoneController.text.trim()}',
+      'email': emailController.text.trim(),
+      'address': addressController.text.trim(),
+    });
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Profile updated successfully")),
+    );
+  }
+
+  Future<void> pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
+      setState(() => _image = File(pickedFile.path));
     }
   }
 
   @override
+  void dispose() {
+    nameController.dispose();
+    phoneController.dispose();
+    emailController.dispose();
+    addressController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF5F7FA),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -46,15 +109,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         centerTitle: true,
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-
             Stack(
               children: [
-
                 CircleAvatar(
                   radius: 60,
                   backgroundColor: Colors.white,
@@ -62,11 +122,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     radius: 55,
                     backgroundImage: _image != null
                         ? FileImage(_image!)
-                        : const AssetImage("images/user.png")
-                            as ImageProvider,
+                        : const AssetImage("images/user.png") as ImageProvider,
                   ),
                 ),
-
                 Positioned(
                   bottom: 5,
                   right: 5,
@@ -91,56 +149,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
             const SizedBox(height: 10),
 
-            const Text(
-              "Omar Hassan",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+            Text(
+              nameController.text.isEmpty ? "User" : nameController.text,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
 
-            const Text(
-              "Premium Member",
-              style: TextStyle(color: Colors.grey),
-            ),
+            const Text("Customer", style: TextStyle(color: Colors.grey)),
 
             const SizedBox(height: 30),
 
-            buildField("Full Name", "Omar Hassan"),
+            buildField("Full Name", nameController),
 
             const SizedBox(height: 15),
 
             const Align(
               alignment: Alignment.centerLeft,
-              child: Text(
-                "Phone Number",
-                style: TextStyle(color: Colors.grey),
-              ),
+              child: Text("Phone Number", style: TextStyle(color: Colors.grey)),
             ),
 
             const SizedBox(height: 5),
 
             Row(
               children: [
-
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 15, vertical: 16),
+                    horizontal: 15,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                      )
-                    ],
                   ),
                   child: const Text("+962"),
                 ),
-
                 const SizedBox(width: 10),
-
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -148,16 +190,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                        )
-                      ],
                     ),
-                    child: const TextField(
-                      decoration: InputDecoration(
-                        hintText: "791234567",
+                    child: TextField(
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
                         border: InputBorder.none,
                       ),
                     ),
@@ -168,74 +205,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
             const SizedBox(height: 15),
 
-            buildField("Email Option", "omar@example.com"),
+            buildField("Email Option", emailController),
 
             const SizedBox(height: 20),
 
-            Container(
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                  )
-                ],
-              ),
-              child: Row(
-                children: [
-
-                  const Icon(Icons.location_on,
-                      color: Color(0xFF1E88E5)),
-
-                  const SizedBox(width: 10),
-
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Default Address",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          "Amman, Jordan",
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const Text(
-                    "Change",
-                    style: TextStyle(
-                      color: Color(0xFF1E88E5),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            buildField("Default Address", addressController),
 
             const SizedBox(height: 30),
 
-            Container(
-              width: double.infinity,
-              height: 55,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(30),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1E88E5), Color(0xFF42A5F5)],
+            GestureDetector(
+              onTap: saveChanges,
+              child: Container(
+                width: double.infinity,
+                height: 55,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(30),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1E88E5), Color(0xFF42A5F5)],
+                  ),
                 ),
-              ),
-              child: const Center(
-                child: Text(
-                  "Save Changes",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                child: const Center(
+                  child: Text(
+                    "Save Changes",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -246,36 +241,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget buildField(String label, String hint) {
+  Widget buildField(String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
-        Text(
-          label,
-          style: const TextStyle(color: Colors.grey),
-        ),
-
+        Text(label, style: const TextStyle(color: Colors.grey)),
         const SizedBox(height: 5),
-
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           height: 55,
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-              )
-            ],
           ),
           child: TextField(
-            decoration: InputDecoration(
-              hintText: hint,
-              border: InputBorder.none,
-            ),
+            controller: controller,
+            decoration: const InputDecoration(border: InputBorder.none),
           ),
         ),
       ],

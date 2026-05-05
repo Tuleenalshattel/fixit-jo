@@ -406,7 +406,14 @@ class _RegisterPageState extends State<RegisterPage> {
                       );
                       return;
                     }
+                    String rawPhone = _phoneController.text.trim();
+                    rawPhone = rawPhone.replaceAll(' ', '');
 
+                    if (rawPhone.startsWith('+962')) {
+                      rawPhone = rawPhone.substring(4);
+                    } else if (rawPhone.startsWith('0')) {
+                      rawPhone = rawPhone.substring(1);
+                    }
                     final phone = "+962${_phoneController.text.trim()}";
 
                     await FirebaseAuth.instance.verifyPhoneNumber(

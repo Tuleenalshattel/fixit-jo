@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'edit_profile_customer.dart';
 import 'settings_customer.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ProfilePage extends StatelessWidget {
   final String name;
@@ -15,21 +17,43 @@ class ProfilePage extends StatelessWidget {
     required this.userType,
   });
 
+  String formatDate(Timestamp? timestamp) {
+    if (timestamp == null) return "No date";
+
+    final date = timestamp.toDate();
+    return "${date.day}/${date.month}/${date.year}";
+  }
+
+  IconData getServiceIcon(String title) {
+    if (title == 'Plumbing') return Icons.plumbing;
+    if (title == 'Electrical') return Icons.flash_on;
+    if (title == 'AC Repair') return Icons.ac_unit;
+    if (title == 'Carpentry') return Icons.handyman;
+    return Icons.build;
+  }
+
+  Color getStatusColor(String status) {
+    if (status == 'COMPLETED') return Colors.green;
+    if (status == 'DECLINED' || status == 'CANCELLED') return Colors.red;
+    if (status == 'ACCEPTED' || status == 'ARRIVED') return Colors.blue;
+    return Colors.orange;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F7),
 
       body: SafeArea(
         child: Column(
           children: [
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
                   const SizedBox(width: 48),
-
                   const Expanded(
                     child: Center(
                       child: Text(
@@ -42,18 +66,18 @@ class ProfilePage extends StatelessWidget {
                       ),
                     ),
                   ),
-
-                 IconButton(
+                  IconButton(
                     icon: const Icon(Icons.settings, color: Colors.blue),
-                   onPressed: () {
-                     Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                      builder: (context) => const SettingsScreen(),
-                    ),
-                  );
-                },
-              ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              SettingsScreen(name: name, phone: phone),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -74,7 +98,6 @@ class ProfilePage extends StatelessWidget {
                     backgroundImage: AssetImage("images/user.png"),
                   ),
                 ),
-
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.blue,
@@ -84,25 +107,53 @@ class ProfilePage extends StatelessWidget {
                     onPressed: () {},
                     icon: const Icon(Icons.edit, color: Colors.white, size: 18),
                   ),
-                )
+                ),
               ],
             ),
 
             const SizedBox(height: 15),
 
-            Text(
-              name,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(uid)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Column(
+                    children: [
+                      Text(
+                        "User",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 5),
+                      Text("", style: TextStyle(color: Colors.grey)),
+                    ],
+                  );
+                }
 
-            const SizedBox(height: 5),
+                final data = snapshot.data!.data() as Map<String, dynamic>?;
 
-            Text(
-              phone,
-              style: const TextStyle(color: Colors.grey),
+                final realName = data?['name']?.toString() ?? 'User';
+                final realPhone = data?['phone']?.toString() ?? '';
+
+                return Column(
+                  children: [
+                    Text(
+                      realName,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(realPhone, style: const TextStyle(color: Colors.grey)),
+                  ],
+                );
+              },
             ),
 
             const SizedBox(height: 25),
@@ -114,7 +165,7 @@ class ProfilePage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => EditProfileScreen(),
+                      builder: (context) => const EditProfileScreen(),
                     ),
                   );
                 },
@@ -148,16 +199,10 @@ class ProfilePage extends StatelessWidget {
                 children: const [
                   Text(
                     "My Requests",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   Spacer(),
-                  Text(
-                    "View all",
-                    style: TextStyle(color: Colors.blue),
-                  ),
+                  Text("View all", style: TextStyle(color: Colors.blue)),
                 ],
               ),
             ),
@@ -165,31 +210,51 @@ class ProfilePage extends StatelessWidget {
             const SizedBox(height: 10),
 
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: const [
-                  RequestItem(
-                    title: "Plumbing",
-                    date: "Oct 24, 2025 • 10:00 AM",
-                    status: "COMPLETED",
-                    icon: Icons.plumbing,
-                    color: Colors.green,
-                  ),
-                  RequestItem(
-                    title: "Electrical",
-                    date: "Nov 02, 2025 • 02:30 PM",
-                    status: "PENDING",
-                    icon: Icons.flash_on,
-                    color: Colors.orange,
-                  ),
-                  RequestItem(
-                    title: "HVAC Repair",
-                    date: "Oct 15, 2025 • 09:00 AM",
-                    status: "CANCELLED",
-                    icon: Icons.ac_unit,
-                    color: Colors.red,
-                  ),
-                ],
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('service_requests')
+                    .where('customerId', isEqualTo: uid)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        "No requests yet",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    );
+                  }
+
+                  final requests = snapshot.data!.docs;
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: requests.length,
+                    itemBuilder: (context, index) {
+                      final data =
+                          requests[index].data() as Map<String, dynamic>;
+
+                      final title = data['category']?.toString() ?? 'Service';
+
+                      final status =
+                          data['status']?.toString().toUpperCase() ?? 'PENDING';
+
+                      final createdAt = data['createdAt'] as Timestamp?;
+
+                      return RequestItem(
+                        title: title,
+                        date: formatDate(createdAt),
+                        status: status,
+                        icon: getServiceIcon(title),
+                        color: getStatusColor(status),
+                      );
+                    },
+                  );
+                },
               ),
             ),
 
@@ -204,11 +269,11 @@ class ProfilePage extends StatelessWidget {
                   ),
                 ),
                 onPressed: () {
+                  FirebaseAuth.instance.signOut();
+
                   Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const LoginPage(),
-                    ),
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
                     (route) => false,
                   );
                 },
@@ -275,14 +340,17 @@ class RequestItem extends StatelessWidget {
             backgroundColor: color.withOpacity(0.2),
             child: Icon(icon, color: color),
           ),
+
           const SizedBox(width: 15),
 
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 5),
                 Text(date, style: const TextStyle(color: Colors.grey)),
               ],
@@ -295,13 +363,10 @@ class RequestItem extends StatelessWidget {
               color: color.withOpacity(0.2),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text(
-              status,
-              style: TextStyle(color: color, fontSize: 12),
-            ),
+            child: Text(status, style: TextStyle(color: color, fontSize: 12)),
           ),
         ],
       ),
     );
   }
-}            
+}

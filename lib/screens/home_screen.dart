@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'profile_customer_screen.dart';
 import 'request_service_screen.dart';
 import 'package:fixitjo_app/screens/notification_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'rating_screen.dart';
+import 'tracking_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,6 +18,29 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String searchText = "";
+  String customerName = "";
+
+  @override
+  void initState() {
+    super.initState();
+    getCustomerName();
+  }
+
+  Future<void> getCustomerName() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (doc.exists) {
+      setState(() {
+        customerName = doc.data()?['name'] ?? '';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,13 +61,13 @@ class _HomePageState extends State<HomePage> {
 
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
                   "WELCOME BACK",
                   style: TextStyle(fontSize: 10, color: Color(0xFF1E88E5)),
                 ),
                 Text(
-                  "Hello",
+                  "Hello ${customerName.isNotEmpty ? customerName : 'User'}",
                   style: TextStyle(
                     fontSize: 16,
                     color: Color(0xFF1E88E5),
@@ -169,7 +196,6 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 25),
 
-            /// باقي الكود زي ما هو 👇
             const Text(
               "Ongoing Requests",
               style: TextStyle(
@@ -181,57 +207,195 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 10),
 
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 25,
-                    backgroundImage: AssetImage('images/ac.png.jpg'),
-                  ),
-                  const SizedBox(width: 10),
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('service_requests')
+                  .orderBy('createdAt', descending: true)
+                  .limit(1)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                print(
+                  "CURRENT USER UID: ${FirebaseAuth.instance.currentUser?.uid}",
+                );
 
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "AC Maintenance",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 5),
-                        Text(
-                          "Professional: Mike's Cooling",
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.orange.shade100,
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Text(
-                      "IN PROGRESS",
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.orange,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      "No ongoing requests",
+                      style: TextStyle(color: Colors.grey),
                     ),
+                  );
+                }
+
+                final data =
+                    snapshot.data!.docs.first.data() as Map<String, dynamic>;
+                final requestId = snapshot.data!.docs.first.id;
+
+                final String category =
+                    data['category']?.toString() ?? 'Service';
+
+                final String technicianName =
+                    data['technicianName']?.toString() ?? 'Waiting...';
+
+                final String arrivalTime =
+                    data['arrivalTime']?.toString() ?? '';
+
+                final String status = data['status']?.toString() ?? 'pending';
+
+                final bool isRated = data['rating'] != null;
+
+                if (status == 'completed' && isRated) {
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      "No ongoing requests",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  );
+                }
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                ],
-              ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 25,
+                        backgroundColor: Colors.blue.shade100,
+                        child: const Icon(Icons.handyman, color: Colors.blue),
+                      ),
+                      const SizedBox(width: 10),
+
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              category,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              status == 'accepted'
+                                  ? "Technician: $technicianName"
+                                  : status == 'completed'
+                                  ? "Service completed"
+                                  : "Waiting for technician...",
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                            if (status == 'accepted') ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                "Arriving in: $arrivalTime",
+
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                            if (status == 'accepted') ...[
+                              const SizedBox(height: 8),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF1E88E5),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => TrackingScreen(
+                                        requestId: requestId,
+                                        isTechnician: false,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.location_on,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                label: const Text(
+                                  'Track Technician',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            if (status == 'completed' &&
+                                data['rating'] == null) ...[
+                              const SizedBox(height: 8),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => RatingScreen(
+                                        requestId: requestId,
+                                        technicianId:
+                                            data['technicianId']?.toString() ??
+                                            '',
+                                        technicianName:
+                                            data['technicianName']
+                                                ?.toString() ??
+                                            'Technician',
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: const Text("Rate Technician"),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: status == 'accepted'
+                              ? Colors.green.shade100
+                              : Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          status.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: status == 'accepted'
+                                ? Colors.green
+                                : Colors.orange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ],
         ),

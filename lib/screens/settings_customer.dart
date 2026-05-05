@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
 
+//this pag is for technican
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+  final String name;
+  final String phone;
+
+  const SettingsScreen({super.key, required this.name, required this.phone});
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +17,7 @@ class SettingsScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-
+            /// 🔙 HEADER
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -26,9 +31,9 @@ class SettingsScreen extends StatelessWidget {
                   const Expanded(
                     child: Text(
                       "Settings",
-                       style: TextStyle(
-                         fontSize: 20,
-                         fontWeight: FontWeight.bold,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
@@ -39,6 +44,7 @@ class SettingsScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
+            /// 👤 PROFILE
             Stack(
               alignment: Alignment.bottomRight,
               children: [
@@ -62,35 +68,34 @@ class SettingsScreen extends StatelessWidget {
                     onPressed: () {},
                     icon: const Icon(Icons.edit, color: Colors.white, size: 18),
                   ),
-                )
+                ),
               ],
             ),
 
             const SizedBox(height: 10),
 
-            const Text(
-              "Omar Hassan",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            /// ✅ الاسم من Firebase
+            Text(
+              name,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 5),
 
-            const Text(
-              "+962 7X XXX XXXX",
-              style: TextStyle(color: Colors.grey),
-            ),
+            /// ✅ الرقم من Firebase
+            Text(phone, style: const TextStyle(color: Colors.grey)),
 
             const SizedBox(height: 25),
 
+            /// ⚙️ SETTINGS LIST
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
-
                   buildItem(Icons.person, "Account Information"),
                   buildItem(Icons.lock, "Change Password / Security"),
 
-                  // Notifications with switch
+                  /// 🔔 Notifications
                   Container(
                     margin: const EdgeInsets.only(bottom: 15),
                     padding: const EdgeInsets.all(15),
@@ -102,26 +107,29 @@ class SettingsScreen extends StatelessWidget {
                       children: [
                         const CircleAvatar(
                           backgroundColor: Color(0xFFE6F2F8),
-                          child: Icon(Icons.notifications, color: Colors.orange),
+                          child: Icon(
+                            Icons.notifications,
+                            color: Colors.orange,
+                          ),
                         ),
                         const SizedBox(width: 15),
-                        const Expanded(
-                          child: Text("Notifications"),
-                        ),
-                        Switch(
-                          value: true,
-                          onChanged: (value) {},
-                        )
+                        const Expanded(child: Text("Notifications")),
+                        Switch(value: true, onChanged: (value) {}),
                       ],
                     ),
                   ),
 
-                  buildItem(Icons.language, "Language selection", trailing: "English"),
+                  buildItem(
+                    Icons.language,
+                    "Language selection",
+                    trailing: "English",
+                  ),
                   buildItem(Icons.help, "Help & Support"),
                   buildItem(Icons.info, "About the App"),
 
                   const SizedBox(height: 20),
 
+                  /// 🔴 LOGOUT (مهم جدًا)
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red[100],
@@ -130,7 +138,9 @@ class SettingsScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    onPressed: () {
+                    onPressed: () async {
+                      await FirebaseAuth.instance.signOut(); // 🔥 هذا المهم
+
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
@@ -155,10 +165,10 @@ class SettingsScreen extends StatelessWidget {
                       "Version 2.4.1 (Build 890)",
                       style: TextStyle(color: Colors.grey),
                     ),
-                  )
+                  ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -186,7 +196,7 @@ class SettingsScreen extends StatelessWidget {
           if (trailing != null)
             Text(trailing, style: const TextStyle(color: Colors.blue)),
 
-          const Icon(Icons.arrow_forward_ios, size: 16)
+          const Icon(Icons.arrow_forward_ios, size: 16),
         ],
       ),
     );

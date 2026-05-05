@@ -1,11 +1,15 @@
 import 'package:fixitjo_app/screens/map_screen.dart';
+import 'package:fixitjo_app/screens/request_service_screen.dart';
+import 'package:fixitjo_app/screens/settings_customer.dart';
 import 'package:fixitjo_app/screens/splash_screen.dart';
+import 'package:fixitjo_app/screens/technician_home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'screens/chatbot_screen.dart';
 import 'screens/notification_screen.dart';
+import 'screens/settings_customer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

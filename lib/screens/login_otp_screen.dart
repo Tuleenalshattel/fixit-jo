@@ -1,35 +1,26 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'home_screen.dart';
 import 'technician_home_screen.dart';
 import 'admin_screen.dart';
 
-class OtpScreen extends StatefulWidget {
+class LoginOtpScreen extends StatefulWidget {
   final String verificationId;
   final String phoneNumber;
-  final String name;
-  final String role;
-  final List<String> specializations;
-  final int experience;
 
-  const OtpScreen({
+  const LoginOtpScreen({
     super.key,
     required this.verificationId,
     required this.phoneNumber,
-    required this.name,
-    required this.role,
-    this.specializations = const [],
-    this.experience = 0,
   });
 
   @override
-  State<OtpScreen> createState() => _OtpScreenState();
+  State<LoginOtpScreen> createState() => _LoginOtpScreenState();
 }
 
-class _OtpScreenState extends State<OtpScreen> {
+class _LoginOtpScreenState extends State<LoginOtpScreen> {
   final List<TextEditingController> controllers = List.generate(
     6,
     (_) => TextEditingController(),
@@ -83,42 +74,16 @@ class _OtpScreenState extends State<OtpScreen> {
 
       final uid = userCredential.user!.uid;
 
-      /// 1. Save user FIRST
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
           .get();
 
-      if (!userDoc.exists) {
-        await FirebaseFirestore.instance.collection('users').doc(uid).set({
-          'uid': uid,
-          'name': widget.name,
-          'phone': widget.phoneNumber,
-          'role': widget.role,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-      }
+      final role = userDoc.data()?['role'] ?? 'customer';
 
-      /// 2. If technician save extra data
-      if (widget.role == 'technician' && !userDoc.exists) {
-        await FirebaseFirestore.instance
-            .collection('technicians')
-            .doc(uid)
-            .set({
-              'name': widget.name,
-              'phone': widget.phoneNumber,
-              'specializations': widget.specializations,
-              'experience': widget.experience,
-              'isVerified': false,
-              'ratingAverage': 0.0,
-              'createdAt': FieldValue.serverTimestamp(),
-            });
-      }
-      final role = userDoc.exists
-          ? (userDoc.data() as Map<String, dynamic>)['role'] ?? widget.role
-          : widget.role;
       if (!mounted) return;
 
+      // 🔥 FIXED LOGIC HERE
       if (role == 'admin') {
         Navigator.pushAndRemoveUntil(
           context,
@@ -126,17 +91,25 @@ class _OtpScreenState extends State<OtpScreen> {
           (route) => false,
         );
       } else if (role == 'technician') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Registration submitted. Waiting for admin approval.",
+        final techDoc = await FirebaseFirestore.instance
+            .collection('technicians')
+            .doc(uid)
+            .get();
+
+        final isVerified = techDoc.data()?['isVerified'] == true;
+
+        if (!isVerified) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Your account is pending admin approval"),
             ),
-          ),
-        );
+          );
+          return;
+        }
 
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const LoginPage()),
+          MaterialPageRoute(builder: (_) => const TechnicianHomeScreen()),
           (route) => false,
         );
       } else {
@@ -169,7 +142,6 @@ class _OtpScreenState extends State<OtpScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F7),
-
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -177,11 +149,9 @@ class _OtpScreenState extends State<OtpScreen> {
         title: const Text("OTP Verification"),
         centerTitle: true,
       ),
-
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-
           child: Column(
             children: [
               const SizedBox(height: 20),
@@ -193,7 +163,6 @@ class _OtpScreenState extends State<OtpScreen> {
 
               const SizedBox(height: 30),
 
-              /// OTP BOXES
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: List.generate(6, (index) {
