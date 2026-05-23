@@ -21,6 +21,39 @@ class LoginOtpScreen extends StatefulWidget {
 }
 
 class _LoginOtpScreenState extends State<LoginOtpScreen> {
+  String currentVerificationId = "";
+  Future<void> resendCode() async {
+    setState(() {
+      seconds = 30;
+    });
+
+    startTimer();
+
+    await FirebaseAuth.instance.verifyPhoneNumber(
+      phoneNumber: widget.phoneNumber,
+
+      verificationCompleted: (PhoneAuthCredential credential) async {},
+
+      verificationFailed: (FirebaseAuthException e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "Verification failed")),
+        );
+      },
+
+      codeSent: (String verificationId, int? resendToken) {
+        currentVerificationId = verificationId;
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Code resent")));
+      },
+
+      codeAutoRetrievalTimeout: (String verificationId) {
+        currentVerificationId = verificationId;
+      },
+    );
+  }
+
   final List<TextEditingController> controllers = List.generate(
     6,
     (_) => TextEditingController(),
@@ -35,6 +68,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
   @override
   void initState() {
     super.initState();
+    currentVerificationId = widget.verificationId;
     startTimer();
   }
 
@@ -64,7 +98,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
 
     try {
       final credential = PhoneAuthProvider.credential(
-        verificationId: widget.verificationId,
+        verificationId: currentVerificationId,
         smsCode: otp,
       );
 
@@ -189,7 +223,12 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
 
               const SizedBox(height: 20),
 
-              Text("Resend in $seconds s"),
+              seconds > 0
+                  ? Text("Resend in $seconds s")
+                  : TextButton(
+                      onPressed: resendCode,
+                      child: const Text("Resend Code"),
+                    ),
 
               const SizedBox(height: 40),
 

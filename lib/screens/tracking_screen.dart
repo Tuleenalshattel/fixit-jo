@@ -161,6 +161,86 @@ class _TrackingScreenState extends State<TrackingScreen> {
     }
   }
 
+  void showReportCustomerDialog({
+    required String requestId,
+    required String customerId,
+    required String customerName,
+  }) {
+    String selectedType = "Unpaid Service";
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Report Customer"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                value: selectedType,
+                items: const [
+                  DropdownMenuItem(
+                    value: "Unpaid Service",
+                    child: Text("Unpaid Service"),
+                  ),
+                  DropdownMenuItem(
+                    value: "Abusive Behavior",
+                    child: Text("Abusive Behavior"),
+                  ),
+                  DropdownMenuItem(
+                    value: "Fake Request",
+                    child: Text("Fake Request"),
+                  ),
+                  DropdownMenuItem(value: "Other", child: Text("Other")),
+                ],
+                onChanged: (value) => selectedType = value!,
+                decoration: const InputDecoration(labelText: "Report Type"),
+              ),
+              TextField(
+                controller: reasonController,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: "Reason"),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final techId = FirebaseAuth.instance.currentUser!.uid;
+
+                await FirebaseFirestore.instance
+                    .collection('customer_reports')
+                    .add({
+                      'customerId': customerId,
+                      'customerName': customerName,
+                      'technicianId': techId,
+                      'requestId': requestId,
+                      'reportType': selectedType,
+                      'reason': reasonController.text.trim(),
+                      'status': 'pending',
+                      'createdAt': FieldValue.serverTimestamp(),
+                    });
+
+                if (!context.mounted) return;
+                Navigator.pop(context);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Report submitted to admin")),
+                );
+              },
+              child: const Text("Submit"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -294,7 +374,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
                   ),
                 ),
 
-                // Bottom Card
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: const BoxDecoration(
@@ -398,7 +477,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                             ),
                           ),
 
-                        if (_status == 'arrived')
+                        if (_status == 'arrived') ...[
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
@@ -412,11 +491,65 @@ class _TrackingScreenState extends State<TrackingScreen> {
                                 ),
                               ),
                               onPressed: () async {
+                                final requestDoc = await FirebaseFirestore
+                                    .instance
+                                    .collection('service_requests')
+                                    .doc(widget.requestId)
+                                    .get();
+
+                                final requestData = requestDoc.data();
+
+                                if (requestData == null) return;
+
+                                final techId = requestData['technicianId'];
+                                final customerId = requestData['customerId'];
+
                                 await FirebaseFirestore.instance
                                     .collection('service_requests')
                                     .doc(widget.requestId)
-                                    .update({'status': 'completed'});
+                                    .update({
+                                      'status': 'completed',
+                                      'completedAt':
+                                          FieldValue.serverTimestamp(),
+                                    });
+
+                                // زيادة عدد الجوبات
+                                if (techId != null) {
+                                  final techRef = FirebaseFirestore.instance
+                                      .collection('technicians')
+                                      .doc(techId);
+
+                                  final techDoc = await techRef.get();
+
+                                  final currentJobs =
+                                      (techDoc.data()?['jobsDone'] as num?)
+                                          ?.toInt() ??
+                                      0;
+
+                                  await techRef.set({
+                                    'jobsDone': currentJobs + 1,
+                                  }, SetOptions(merge: true));
+                                }
+
+                                // إشعار للزبون
+                                if (customerId != null) {
+                                  await FirebaseFirestore.instance
+                                      .collection('notifications')
+                                      .add({
+                                        'userId': customerId,
+                                        'title': 'Service Completed ✅',
+                                        'body':
+                                            'Your service has been completed. Please rate your experience.',
+                                        'type': 'service_completed',
+                                        'requestId': widget.requestId,
+                                        'isRead': false,
+                                        'createdAt':
+                                            FieldValue.serverTimestamp(),
+                                      });
+                                }
+
                                 if (!context.mounted) return;
+
                                 Navigator.pop(context);
                               },
                               child: const Text(
@@ -428,9 +561,36 @@ class _TrackingScreenState extends State<TrackingScreen> {
                               ),
                             ),
                           ),
+
+                          const SizedBox(height: 10),
+
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: () async {
+                                final requestDoc = await FirebaseFirestore
+                                    .instance
+                                    .collection('service_requests')
+                                    .doc(widget.requestId)
+                                    .get();
+
+                                final data = requestDoc.data();
+
+                                if (data == null) return;
+
+                                showReportCustomerDialog(
+                                  requestId: widget.requestId,
+                                  customerId: data['customerId'] ?? '',
+                                  customerName:
+                                      data['customerName'] ?? 'Customer',
+                                );
+                              },
+                              child: const Text("Report Customer"),
+                            ),
+                          ),
+                        ],
                       ],
 
-                      // للزبون
                       if (!widget.isTechnician && _status == 'arrived') ...[
                         const SizedBox(height: 12),
                         Container(

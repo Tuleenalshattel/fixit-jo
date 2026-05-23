@@ -6,6 +6,8 @@ import 'login_screen.dart';
 import 'home_screen.dart';
 import 'technician_home_screen.dart';
 import 'admin_screen.dart';
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class OtpScreen extends StatefulWidget {
   final String verificationId;
@@ -14,6 +16,7 @@ class OtpScreen extends StatefulWidget {
   final String role;
   final List<String> specializations;
   final int experience;
+  final File? profileImage;
 
   const OtpScreen({
     super.key,
@@ -23,6 +26,7 @@ class OtpScreen extends StatefulWidget {
     required this.role,
     this.specializations = const [],
     this.experience = 0,
+    this.profileImage,
   });
 
   @override
@@ -100,7 +104,17 @@ class _OtpScreenState extends State<OtpScreen> {
       }
 
       /// 2. If technician save extra data
-      if (widget.role == 'technician' && !userDoc.exists) {
+      if (widget.role == 'technician') {
+        String? imageUrl;
+
+        if (widget.profileImage != null) {
+          final ref = FirebaseStorage.instance.ref().child(
+            'technicians/$uid/profile.jpg',
+          );
+          await ref.putFile(widget.profileImage!);
+          imageUrl = await ref.getDownloadURL();
+        }
+
         await FirebaseFirestore.instance
             .collection('technicians')
             .doc(uid)
@@ -110,9 +124,27 @@ class _OtpScreenState extends State<OtpScreen> {
               'specializations': widget.specializations,
               'experience': widget.experience,
               'isVerified': false,
+              'available': false,
               'ratingAverage': 0.0,
+              'jobsDone': 0,
+              'ratingCount': 0,
+              'imageUrl': imageUrl ?? '',
               'createdAt': FieldValue.serverTimestamp(),
             });
+
+        await FirebaseFirestore.instance.collection('notifications').add({
+          'userId': 'admin',
+
+          'title': 'New Technician Registration',
+
+          'body': '${widget.name} is waiting for approval',
+
+          'type': 'new_technician',
+
+          'isRead': false,
+
+          'createdAt': FieldValue.serverTimestamp(),
+        });
       }
       final role = userDoc.exists
           ? (userDoc.data() as Map<String, dynamic>)['role'] ?? widget.role

@@ -3,6 +3,7 @@ import 'otp_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum UserType { customer, technician }
 
@@ -20,11 +21,11 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _phoneController = TextEditingController();
 
   File? profileImage;
+  bool isLoading = false;
 
   double experience = 8;
 
-  List<String> selectedSpecializations = [];
-
+  String selectedSpecialization = '';
   Future pickImage() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
 
@@ -101,17 +102,25 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget buildSpecialization(String text, IconData icon) {
-    bool selected = selectedSpecializations.contains(text);
+  IconData getServiceIcon(String name) {
+    if (name == "Plumbing") return Icons.plumbing;
+    if (name == "Electrical") return Icons.electrical_services;
+    if (name == "Carpentry") return Icons.handyman;
+    if (name == "Cleaning") return Icons.cleaning_services;
+    if (name == "AC Repair") return Icons.ac_unit;
+    if (name == "Painting") return Icons.format_paint;
+    if (name == "Blacksmith") return Icons.hardware;
+    if (name == "Heating") return Icons.fireplace;
+    if (name == "furniture") return Icons.chair;
+    return Icons.work;
+  }
 
+  Widget buildSpecialization(String text, IconData icon) {
+    bool selected = selectedSpecialization == text;
     return GestureDetector(
       onTap: () {
         setState(() {
-          if (selected) {
-            selectedSpecializations.remove(text);
-          } else {
-            selectedSpecializations.add(text);
-          }
+          selectedSpecialization = text;
         });
       },
       child: Container(
@@ -334,16 +343,35 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   const SizedBox(height: 15),
 
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      buildSpecialization("Plumbing", Icons.plumbing),
-                      buildSpecialization("Electrical", Icons.flash_on),
-                      buildSpecialization("Carpentry", Icons.handyman),
-                      buildSpecialization("AC Repair", Icons.ac_unit),
-                      buildSpecialization("Heating", Icons.fireplace),
-                    ],
+                  StreamBuilder(
+                    stream: FirebaseFirestore.instance
+                        .collection('service')
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return const Text("No services available");
+                      }
+
+                      final services = snapshot.data!.docs;
+
+                      return Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: services.map((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          final serviceName = data['name']?.toString() ?? '';
+
+                          return buildSpecialization(
+                            serviceName,
+                            getServiceIcon(serviceName),
+                          );
+                        }).toList(),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 25),
@@ -398,71 +426,105 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 30),
 
                 GestureDetector(
-                  onTap: () async {
-                    if (_nameController.text.isEmpty ||
-                        _phoneController.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Please fill all fields")),
-                      );
-                      return;
-                    }
-                    String rawPhone = _phoneController.text.trim();
-                    rawPhone = rawPhone.replaceAll(' ', '');
+                  onTap: isLoading
+                      ? null
+                      : () async {
+                          if (_nameController.text.isEmpty ||
+                              _phoneController.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Please fill all fields"),
+                              ),
+                            );
+                            return;
+                          }
+                          String rawPhone = _phoneController.text.trim();
+                          rawPhone = rawPhone.replaceAll(' ', '');
 
-                    if (rawPhone.startsWith('+962')) {
-                      rawPhone = rawPhone.substring(4);
-                    } else if (rawPhone.startsWith('0')) {
-                      rawPhone = rawPhone.substring(1);
-                    }
-                    final phone = "+962${_phoneController.text.trim()}";
+                          if (rawPhone.startsWith('+962')) {
+                            rawPhone = rawPhone.substring(4);
+                          } else if (rawPhone.startsWith('0')) {
+                            rawPhone = rawPhone.substring(1);
+                          }
+                          final phone = "+962${_phoneController.text.trim()}";
 
-                    await FirebaseAuth.instance.verifyPhoneNumber(
-                      phoneNumber: phone,
-                      verificationCompleted:
-                          (PhoneAuthCredential credential) {},
-                      verificationFailed: (FirebaseAuthException e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Error: ${e.message}")),
-                        );
-                      },
-                      codeSent: (String verificationId, int? resendToken) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => OtpScreen(
-                              verificationId: verificationId,
-                              phoneNumber: phone,
-                              name: _nameController.text.trim(),
-                              role: _selectedUserType == UserType.technician
-                                  ? 'technician'
-                                  : 'customer',
-                              specializations: selectedSpecializations,
-                              experience: experience.round(),
-                            ),
-                          ),
-                        );
-                      },
-                      codeAutoRetrievalTimeout: (String verificationId) {},
-                    );
-                  },
+                          setState(() {
+                            isLoading = true;
+                          });
+
+                          await FirebaseAuth.instance.verifyPhoneNumber(
+                            phoneNumber: phone,
+                            verificationCompleted:
+                                (PhoneAuthCredential credential) {},
+                            verificationFailed: (FirebaseAuthException e) {
+                              setState(() {
+                                isLoading = false;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("Error: ${e.message}")),
+                              );
+                            },
+                            codeSent:
+                                (String verificationId, int? resendToken) {
+                                  setState(() {
+                                    isLoading = false;
+                                  });
+
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => OtpScreen(
+                                        verificationId: verificationId,
+                                        phoneNumber: phone,
+                                        name: _nameController.text.trim(),
+                                        role:
+                                            _selectedUserType ==
+                                                UserType.technician
+                                            ? 'technician'
+                                            : 'customer',
+                                        specializations: [
+                                          selectedSpecialization,
+                                        ],
+                                        experience: experience.round(),
+                                        profileImage: profileImage,
+                                      ),
+                                    ),
+                                  );
+                                },
+                            codeAutoRetrievalTimeout:
+                                (String verificationId) {},
+                          );
+                        },
                   child: Container(
                     width: double.infinity,
                     height: 55,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(30),
                       gradient: const LinearGradient(
-                        colors: [Color(0xff1d8fff), Color(0xff63c6ff)],
+                        colors: [
+                          Color.fromARGB(255, 255, 255, 255),
+                          Color.fromARGB(255, 235, 235, 235),
+                        ],
                       ),
                     ),
-                    child: const Center(
-                      child: Text(
-                        "Register",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    child: Center(
+                      child: isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF2F80ED),
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              "Register",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF2F80ED),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
                 ),

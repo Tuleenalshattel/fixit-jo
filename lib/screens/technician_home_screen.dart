@@ -4,11 +4,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'settings_customer.dart';
 import 'package:geolocator/geolocator.dart';
 import 'tracking_screen.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:fixitjo_app/screens/notification_screen.dart';
 
 class TechnicianHomeScreen extends StatefulWidget {
   const TechnicianHomeScreen({super.key});
 
-  static const primary = Color(0xFF0C6A85);
+  static const primary = Color(0xFF2196F3);
 
   @override
   State<TechnicianHomeScreen> createState() => _TechnicianHomeScreenState();
@@ -20,12 +22,39 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
 
   String technicianName = "Technician";
   String technicianPhone = "";
+  double ratingAverage = 0.0;
+  int jobsDone = 0;
+  int ratingCount = 0;
 
   @override
   void initState() {
     super.initState();
     getTechnicianData();
     updateTechnicianLocation();
+  }
+
+  Future<String> getAddressFromLatLng(double lat, double lng) async {
+    try {
+      final placemarks = await placemarkFromCoordinates(lat, lng);
+
+      if (placemarks.isEmpty) {
+        return "Location not available";
+      }
+
+      final place = placemarks.first;
+
+      final street = place.street ?? '';
+      final area = place.subLocality ?? place.locality ?? '';
+      final city = place.administrativeArea ?? '';
+
+      return [
+        street,
+        area,
+        city,
+      ].where((part) => part.trim().isNotEmpty).join(', ');
+    } catch (e) {
+      return "Location not available";
+    }
   }
 
   Future<void> getTechnicianData() async {
@@ -43,6 +72,12 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
     setState(() {
       technicianName = data?['name']?.toString() ?? 'Technician';
       technicianPhone = data?['phone']?.toString() ?? '';
+
+      ratingAverage = (data?['ratingAverage'] as num?)?.toDouble() ?? 0.0;
+
+      jobsDone = (data?['jobsDone'] as num?)?.toInt() ?? 0;
+
+      ratingCount = (data?['ratingCount'] as num?)?.toInt() ?? 0;
     });
   }
 
@@ -105,6 +140,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
           'status': 'accepted',
           'technicianId': user.uid,
           'technicianName': techData['name'],
+          'technicianPhone': techData['phone'],
           'technicianImage': techData['imageUrl'],
           'acceptedAt': FieldValue.serverTimestamp(),
           'arrivalTime': '20 min',
@@ -127,15 +163,181 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   }
 
   Future<void> declineRequest(String requestId) async {
-    await FirebaseFirestore.instance
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final requestRef = FirebaseFirestore.instance
         .collection('service_requests')
-        .doc(requestId)
-        .update({'status': 'declined'});
+        .doc(requestId);
+
+    final requestDoc = await requestRef.get();
+    final requestData = requestDoc.data();
+
+    if (requestData == null) return;
+
+    // قائمة التقنيين يلي رفضو
+    final List declined = List.from(requestData['declinedTechnicians'] ?? []);
+
+    declined.add(user.uid);
+
+    final category = requestData['category'];
+
+    final customerLat = (requestData['latitude'] as num?)?.toDouble();
+
+    final customerLng = (requestData['longitude'] as num?)?.toDouble();
+
+    if (customerLat == null || customerLng == null) return;
+
+    // جيب التقنيين المتاحين
+    final techSnapshot = await FirebaseFirestore.instance
+        .collection('technicians')
+        .where('available', isEqualTo: true)
+        .where('isVerified', isEqualTo: true)
+        .get();
+
+    QueryDocumentSnapshot<Map<String, dynamic>>? nearestTech;
+
+    double minDistance = double.infinity;
+
+    for (final tech in techSnapshot.docs) {
+      final techData = tech.data();
+
+      // إذا رفض قبل هيك تخطاه
+      if (declined.contains(tech.id)) continue;
+
+      // تحقق من التخصص
+      final specs = techData['specializations'];
+
+      if (specs is List && !specs.contains(category)) {
+        continue;
+      }
+
+      final techLat = (techData['latitude'] as num?)?.toDouble();
+
+      final techLng = (techData['longitude'] as num?)?.toDouble();
+
+      if (techLat == null || techLng == null) continue;
+
+      final distance = Geolocator.distanceBetween(
+        customerLat,
+        customerLng,
+        techLat,
+        techLng,
+      );
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestTech = tech;
+      }
+    }
+
+    // ما لقينا حد
+    if (nearestTech == null) {
+      await requestRef.update({
+        'status': 'declined',
+        'declinedTechnicians': declined,
+      });
+    } else {
+      final newTechData = nearestTech.data();
+
+      await requestRef.update({
+        'status': 'pending',
+        'technicianId': nearestTech.id,
+        'technicianName': newTechData['name'],
+        'declinedTechnicians': declined,
+      });
+    }
 
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Request declined')));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Request moved to another technician')),
+    );
+  }
+
+  void showReportCustomerDialog({
+    required String requestId,
+    required String customerId,
+    required String customerName,
+    required String customerPhone,
+  }) {
+    String selectedType = "Unpaid Service";
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Report Customer"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                value: selectedType,
+                items: const [
+                  DropdownMenuItem(
+                    value: "Unpaid Service",
+                    child: Text("Unpaid Service"),
+                  ),
+                  DropdownMenuItem(
+                    value: "Abusive Behavior",
+                    child: Text("Abusive Behavior"),
+                  ),
+                  DropdownMenuItem(
+                    value: "Fake Request",
+                    child: Text("Fake Request"),
+                  ),
+                  DropdownMenuItem(value: "Other", child: Text("Other")),
+                ],
+                onChanged: (value) {
+                  selectedType = value!;
+                },
+                decoration: const InputDecoration(labelText: "Report Type"),
+              ),
+              TextField(
+                controller: reasonController,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: "Reason"),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final techId = FirebaseAuth.instance.currentUser!.uid;
+
+                await FirebaseFirestore.instance
+                    .collection('customer_reports')
+                    .add({
+                      'customerId': customerId,
+                      'customerName': customerName,
+                      'customerPhone': customerPhone,
+                      'technicianId': techId,
+                      'technicianName': technicianName,
+                      'requestId': requestId,
+                      'reportType': selectedType,
+                      'reason': reasonController.text.trim(),
+                      'status': 'pending',
+                      'createdAt': FieldValue.serverTimestamp(),
+                    });
+
+                if (!context.mounted) return;
+                Navigator.pop(context);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Report submitted to admin")),
+                );
+              },
+              child: const Text("Submit"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -148,16 +350,12 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
               Row(
                 children: [
                   const CircleAvatar(
                     radius: 22,
                     backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.person,
-                      color: TechnicianHomeScreen.primary,
-                    ),
+                    child: Icon(Icons.person, color: Color(0xFF2196F3)),
                   ),
                   const SizedBox(width: 10),
                   Column(
@@ -177,7 +375,47 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                     ],
                   ),
                   const Spacer(),
-                  const Icon(Icons.notifications_none),
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('notifications')
+                        .where(
+                          'userId',
+                          isEqualTo: FirebaseAuth.instance.currentUser?.uid,
+                        )
+                        .where('isRead', isEqualTo: false)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      final unreadCount = snapshot.data?.docs.length ?? 0;
+                      return Stack(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.notifications_none),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const NotificationScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          if (unreadCount > 0)
+                            Positioned(
+                              right: 8,
+                              top: 8,
+                              child: Container(
+                                width: 10,
+                                height: 10,
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
                 ],
               ),
 
@@ -196,10 +434,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                       children: const [
                         CircleAvatar(
                           backgroundColor: Color(0xFFE6EEF1),
-                          child: Icon(
-                            Icons.bolt,
-                            color: TechnicianHomeScreen.primary,
-                          ),
+                          child: Icon(Icons.bolt, color: Color(0xFF2196F3)),
                         ),
                         SizedBox(width: 10),
                         Column(
@@ -228,14 +463,27 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                         children: [
                           Expanded(
                             child: GestureDetector(
-                              onTap: () => setState(() => isAvailable = true),
+                              onTap: () async {
+                                setState(() {
+                                  isAvailable = true;
+                                });
+
+                                final user = FirebaseAuth.instance.currentUser;
+
+                                if (user != null) {
+                                  await FirebaseFirestore.instance
+                                      .collection('technicians')
+                                      .doc(user.uid)
+                                      .update({'available': true});
+                                }
+                              },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 10,
                                 ),
                                 decoration: BoxDecoration(
                                   color: isAvailable
-                                      ? TechnicianHomeScreen.primary
+                                      ? const Color(0xFF2196F3)
                                       : Colors.transparent,
                                   borderRadius: BorderRadius.circular(30),
                                 ),
@@ -255,7 +503,20 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                           ),
                           Expanded(
                             child: GestureDetector(
-                              onTap: () => setState(() => isAvailable = false),
+                              onTap: () async {
+                                setState(() {
+                                  isAvailable = false;
+                                });
+
+                                final user = FirebaseAuth.instance.currentUser;
+
+                                if (user != null) {
+                                  await FirebaseFirestore.instance
+                                      .collection('technicians')
+                                      .doc(user.uid)
+                                      .update({'available': false});
+                                }
+                              },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 10,
@@ -289,21 +550,45 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
 
               const SizedBox(height: 20),
 
-              // Stats
-              Row(
-                children: [
-                  statCard("EARNINGS", "\$1,240", "+12% from last week"),
-                  const SizedBox(width: 10),
-                  statCard("JOBS DONE", "42", "This month"),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  statCard("RATING", "4.9 ★", "128 reviews"),
-                  const SizedBox(width: 10),
-                  statCard("EFFICIENCY", "94%", "On-time rate"),
-                ],
+              StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('technicians')
+                    .doc(FirebaseAuth.instance.currentUser?.uid)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  final data = snapshot.data?.data() as Map<String, dynamic>?;
+
+                  final liveJobsDone =
+                      (data?['jobsDone'] as num?)?.toInt() ?? 0;
+                  final liveRatingAverage =
+                      (data?['ratingAverage'] as num?)?.toDouble() ?? 0.0;
+                  final liveRatingCount =
+                      (data?['ratingCount'] as num?)?.toInt() ?? 0;
+
+                  return Column(
+                    children: [
+                      Row(
+                        children: [
+                          statCard(
+                            "JOBS DONE",
+                            liveJobsDone.toString(),
+                            "Completed jobs",
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          statCard(
+                            "RATING",
+                            "${liveRatingAverage.toStringAsFixed(1)} ★",
+                            "$liveRatingCount reviews",
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
               ),
 
               const SizedBox(height: 20),
@@ -336,8 +621,6 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                       'status',
                       whereIn: ['pending', 'accepted', 'arrived'],
                     )
-                    .orderBy('createdAt', descending: true)
-                    .limit(1)
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -402,6 +685,10 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                       final data = doc.data() as Map<String, dynamic>;
                       final String customerName =
                           data['customerName']?.toString() ?? 'Customer';
+                      final String customerPhone =
+                          data['customerPhone']?.toString() ?? '';
+                      final String customerId =
+                          data['customerId']?.toString() ?? '';
                       final String category =
                           data['category']?.toString() ?? 'Service';
                       final String description =
@@ -411,6 +698,9 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                       final double lng =
                           (data['longitude'] as num?)?.toDouble() ?? 0.0;
                       final String status = data['status'] ?? 'pending';
+                      final List<String> imageUrls = List<String>.from(
+                        data['imageUrls'] ?? [],
+                      );
 
                       IconData serviceIcon = Icons.build;
                       if (category == 'Plumbing')
@@ -427,10 +717,13 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                       return requestCard(
                         requestId: doc.id,
                         name: customerName,
+                        customerId: customerId,
+                        customerPhone: customerPhone,
                         service: category,
-                        location:
-                            "Lat: ${lat.toStringAsFixed(4)}, Lng: ${lng.toStringAsFixed(4)}",
+                        lat: lat,
+                        lng: lng,
                         time: description,
+                        imageUrls: imageUrls,
                         icon: serviceIcon,
                         status: status,
                         badge: "NEW REQUEST",
@@ -441,24 +734,6 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                   );
                 },
               ),
-
-              const SizedBox(height: 20),
-
-              const Text(
-                "Quick Links",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  quickBtn(Icons.verified, "View Certifications"),
-                  quickBtn(Icons.access_time, "Service Logs"),
-                  quickBtn(Icons.support_agent, "Help Center"),
-                ],
-              ),
             ],
           ),
         ),
@@ -466,11 +741,11 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        selectedItemColor: TechnicianHomeScreen.primary,
+        selectedItemColor: const Color(0xFF2196F3),
         unselectedItemColor: Colors.grey,
         onTap: (index) async {
           setState(() => _selectedIndex = index);
-          if (index == 3) {
+          if (index == 1) {
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -484,8 +759,6 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "HOME"),
-          BottomNavigationBarItem(icon: Icon(Icons.list), label: "REQUESTS"),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: "MAP"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "PROFILE"),
         ],
       ),
@@ -520,8 +793,12 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   Widget requestCard({
     required String requestId,
     required String name,
+    required String customerPhone,
+    required String customerId,
     required String service,
-    required String location,
+    required double lat,
+    required double lng,
+    required List<String> imageUrls,
     required String time,
     required IconData icon,
     required String status,
@@ -598,18 +875,44 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(service, style: const TextStyle(color: Colors.blue)),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
+
                 Row(
                   children: [
-                    const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        location,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
+                    const Icon(Icons.phone, size: 16, color: Colors.grey),
+
+                    const SizedBox(width: 6),
+
+                    Text(
+                      customerPhone,
+                      style: const TextStyle(color: Colors.grey),
                     ),
                   ],
+                ),
+                const SizedBox(height: 8),
+                FutureBuilder<String>(
+                  future: getAddressFromLatLng(lat, lng),
+                  builder: (context, snapshot) {
+                    final address = snapshot.data ?? "Loading location...";
+
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 16,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            address,
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -625,6 +928,30 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                     ),
                   ],
                 ),
+                if (imageUrls.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 90,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: imageUrls.length,
+                      itemBuilder: (context, index) {
+                        return Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          width: 90,
+                          height: 90,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            image: DecorationImage(
+                              image: NetworkImage(imageUrls[index]),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 10),
 
                 if (status == 'pending') ...[
@@ -673,7 +1000,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: TechnicianHomeScreen.primary,
+                        backgroundColor: const Color(0xFF2196F3),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
@@ -711,10 +1038,40 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                         ),
                       ),
                       onPressed: () async {
+                        final techId = FirebaseAuth.instance.currentUser!.uid;
+                        final reqDoc = await FirebaseFirestore.instance
+                            .collection('service_requests')
+                            .doc(requestId)
+                            .get();
+                        final customerId = reqDoc.data()?['customerId'];
                         await FirebaseFirestore.instance
                             .collection('service_requests')
                             .doc(requestId)
-                            .update({'status': 'completed'});
+                            .update({
+                              'status': 'completed',
+                              'completedAt': FieldValue.serverTimestamp(),
+                            });
+
+                        await FirebaseFirestore.instance
+                            .collection('technicians')
+                            .doc(techId)
+                            .update({'jobsDone': FieldValue.increment(1)});
+                        // إشعار للزبون
+                        if (customerId != null) {
+                          await FirebaseFirestore.instance
+                              .collection('notifications')
+                              .add({
+                                'userId': customerId,
+                                'title': 'Service Completed ✅',
+                                'body':
+                                    'Your service has been completed. Please rate your experience.',
+                                'type': 'service_completed',
+                                'requestId': requestId,
+                                'isRead': false,
+                                'createdAt': FieldValue.serverTimestamp(),
+                              });
+                        }
+
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text("Job Completed")),
@@ -724,6 +1081,27 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                         "Finish Job",
                         style: TextStyle(color: Colors.white),
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        showReportCustomerDialog(
+                          requestId: requestId,
+                          customerId: customerId,
+                          customerName: name,
+                          customerPhone: customerPhone,
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: const Text("Report Customer"),
                     ),
                   ),
                 ],
@@ -745,7 +1123,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: TechnicianHomeScreen.primary),
+          Icon(icon, size: 18, color: const Color(0xFF2196F3)),
           const SizedBox(width: 6),
           Text(text),
         ],

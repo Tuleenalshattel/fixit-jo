@@ -14,7 +14,7 @@ import 'screens/settings_customer.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  Gemini.init(apiKey: 'AIzaSyDELQbUOhChvv1ueGe5XAGXZFZwvFh1qG4');
+  Gemini.init(apiKey: 'AIzaSyBL95VJKxe_IbB_YFQC84VRVW4FhYNNGrk');
   runApp(const MyApp());
 }
 

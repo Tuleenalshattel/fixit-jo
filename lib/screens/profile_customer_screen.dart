@@ -1,3 +1,5 @@
+import 'package:fixitjo_app/screens/chatbot_screen.dart';
+import 'package:fixitjo_app/screens/request_service_screen.dart';
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'edit_profile_customer.dart';
@@ -19,7 +21,6 @@ class ProfilePage extends StatelessWidget {
 
   String formatDate(Timestamp? timestamp) {
     if (timestamp == null) return "No date";
-
     final date = timestamp.toDate();
     return "${date.day}/${date.month}/${date.year}";
   }
@@ -45,7 +46,6 @@ class ProfilePage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F7),
-
       body: SafeArea(
         child: Column(
           children: [
@@ -98,16 +98,6 @@ class ProfilePage extends StatelessWidget {
                     backgroundImage: AssetImage("images/user.png"),
                   ),
                 ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                  child: IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.edit, color: Colors.white, size: 18),
-                  ),
-                ),
               ],
             ),
 
@@ -136,7 +126,6 @@ class ProfilePage extends StatelessWidget {
                 }
 
                 final data = snapshot.data!.data() as Map<String, dynamic>?;
-
                 final realName = data?['name']?.toString() ?? 'User';
                 final realPhone = data?['phone']?.toString() ?? '';
 
@@ -202,7 +191,6 @@ class ProfilePage extends StatelessWidget {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   Spacer(),
-                  Text("View all", style: TextStyle(color: Colors.blue)),
                 ],
               ),
             ),
@@ -231,18 +219,23 @@ class ProfilePage extends StatelessWidget {
 
                   final requests = snapshot.data!.docs;
 
+                  // ترتيب من الأحدث للأقدم
+                  requests.sort((a, b) {
+                    final aTime = (a.data() as Map)['createdAt'] as Timestamp?;
+                    final bTime = (b.data() as Map)['createdAt'] as Timestamp?;
+                    if (aTime == null || bTime == null) return 0;
+                    return bTime.compareTo(aTime);
+                  });
+
                   return ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     itemCount: requests.length,
                     itemBuilder: (context, index) {
                       final data =
                           requests[index].data() as Map<String, dynamic>;
-
                       final title = data['category']?.toString() ?? 'Service';
-
                       final status =
                           data['status']?.toString().toUpperCase() ?? 'PENDING';
-
                       final createdAt = data['createdAt'] as Timestamp?;
 
                       return RequestItem(
@@ -270,7 +263,6 @@ class ProfilePage extends StatelessWidget {
                 ),
                 onPressed: () {
                   FirebaseAuth.instance.signOut();
-
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => const LoginPage()),
@@ -289,21 +281,45 @@ class ProfilePage extends StatelessWidget {
       ),
 
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 4,
+        currentIndex: 2,
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
         onTap: (index) {
-          if (index == 0) {
-            Navigator.pop(context);
+          if (index == 0) Navigator.pop(context);
+          if (index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const RequestServiceScreen(),
+              ),
+            );
+          }
+          if (index == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    const ProfilePage(name: '', phone: '', userType: ''),
+              ),
+            );
           }
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.add), label: "Request"),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: "Map"),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
+      ),
+
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.blue,
+        child: const Icon(Icons.chat, color: Colors.white),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ChatbotScreen()),
+          );
+        },
       ),
     );
   }
@@ -340,9 +356,7 @@ class RequestItem extends StatelessWidget {
             backgroundColor: color.withOpacity(0.2),
             child: Icon(icon, color: color),
           ),
-
           const SizedBox(width: 15),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -356,7 +370,6 @@ class RequestItem extends StatelessWidget {
               ],
             ),
           ),
-
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(

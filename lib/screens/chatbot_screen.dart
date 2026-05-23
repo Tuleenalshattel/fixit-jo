@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ChatbotScreen extends StatefulWidget {
   const ChatbotScreen({super.key});
@@ -11,8 +13,9 @@ class ChatbotScreen extends StatefulWidget {
 class _ChatbotScreenState extends State<ChatbotScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final List<Map<String, String>> _messages = [];
+  final List<Map<String, dynamic>> _messages = [];
   bool _isLoading = false;
+  File? _selectedImage;
 
   final String _systemPrompt =
       'You are Jo Assistant, an AI helper for FixIt Jo, a home maintenance app in Amman, Jordan. '
@@ -27,16 +30,30 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       'role': 'bot',
       'text':
           'Hello! I am Jo Assistant 🔧\nHow can I help you with your home maintenance today?',
+      'image': null,
     });
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      setState(() {
+        _selectedImage = File(picked.path);
+      });
+    }
   }
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && _selectedImage == null) return;
+
+    final imageToSend = _selectedImage;
 
     setState(() {
-      _messages.add({'role': 'user', 'text': text});
+      _messages.add({'role': 'user', 'text': text, 'image': imageToSend});
       _isLoading = true;
+      _selectedImage = null;
     });
 
     _controller.clear();
@@ -44,21 +61,45 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
     try {
       final gemini = Gemini.instance;
-      final response = await gemini.prompt(
-        parts: [Part.text('$_systemPrompt\n\nUser: $text')],
-      );
 
-      setState(() {
-        _messages.add({
-          'role': 'bot',
-          'text': response?.output ?? 'Sorry, I could not understand that.',
+      if (imageToSend != null) {
+        // إرسال مع صورة
+        final imageBytes = await imageToSend.readAsBytes();
+        final response = await gemini.prompt(
+          parts: [
+            Part.text(
+              '$_systemPrompt\n\nUser: ${text.isEmpty ? "What is wrong with this?" : text}',
+            ),
+
+            // convert picture to bytes so gemini can understand
+            Part.bytes(imageBytes),
+          ],
+        );
+        setState(() {
+          _messages.add({
+            'role': 'bot',
+            'text': response?.output ?? 'Sorry, I could not understand that.',
+            'image': null,
+          });
+          _isLoading = false;
         });
-        _isLoading = false;
-      });
+      } else {
+        // إرسال نص فقط
+        final response = await gemini.prompt(
+          parts: [Part.text('$_systemPrompt\n\nUser: $text')],
+        );
+        setState(() {
+          _messages.add({
+            'role': 'bot',
+            'text': response?.output ?? 'Sorry, I could not understand that.',
+            'image': null,
+          });
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      print('ERROR: $e');
       setState(() {
-        _messages.add({'role': 'bot', 'text': 'Error: $e'});
+        _messages.add({'role': 'bot', 'text': 'Error: $e', 'image': null});
         _isLoading = false;
       });
     }
@@ -157,25 +198,77 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                             : const Radius.circular(16),
                       ),
                     ),
-                    child: Text(
-                      message['text']!,
-                      style: TextStyle(
-                        color: isUser ? Colors.white : Colors.black87,
-                        fontSize: 14,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (message['image'] != null)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(
+                              message['image'] as File,
+                              width: 200,
+                              height: 150,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        if (message['image'] != null &&
+                            (message['text'] as String).isNotEmpty)
+                          const SizedBox(height: 8),
+                        if ((message['text'] as String).isNotEmpty)
+                          Text(
+                            message['text'] as String,
+                            style: TextStyle(
+                              color: isUser ? Colors.white : Colors.black87,
+                              fontSize: 14,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 );
               },
             ),
           ),
+
+          // Preview الصورة المختارة
+          if (_selectedImage != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              color: const Color(0xFFF1F1F1),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.file(
+                      _selectedImage!,
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Image selected',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.grey),
+                    onPressed: () => setState(() => _selectedImage = null),
+                  ),
+                ],
+              ),
+            ),
+
+          // Input Bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
+                  color: Colors.grey.withValues(alpha: 0.2),
                   blurRadius: 6,
                   offset: const Offset(0, -2),
                 ),
@@ -183,9 +276,17 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             ),
             child: Row(
               children: [
+                // زر الصورة
+                IconButton(
+                  icon: const Icon(Icons.image, color: Color(0xFF4FC3F7)),
+                  onPressed: _pickImage,
+                ),
                 Expanded(
                   child: TextField(
                     controller: _controller,
+
+                    // can take arabic from laptop keybored
+                    textDirection: TextDirection.rtl,
                     decoration: InputDecoration(
                       hintText: 'Describe your issue...',
                       filled: true,

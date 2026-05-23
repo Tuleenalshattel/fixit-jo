@@ -12,6 +12,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController phoneController = TextEditingController();
+  bool isSendingOtp = false;
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F7),
@@ -135,69 +136,115 @@ class _LoginPageState extends State<LoginPage> {
                         width: double.infinity,
                         height: 55,
                         child: ElevatedButton(
-                          onPressed: () async {
-                            String phone = phoneController.text
-                                .trim()
-                                .replaceAll(' ', '');
+                          onPressed: isSendingOtp
+                              ? null
+                              : () async {
+                                  String phone = phoneController.text
+                                      .trim()
+                                      .replaceAll(' ', '');
 
-                            if (phone.isEmpty || phone.length < 9) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Enter valid phone number"),
-                                ),
-                              );
-                              return;
-                            }
-
-                            String phoneNumber = '+962$phone';
-
-                            await FirebaseAuth.instance.verifyPhoneNumber(
-                              phoneNumber: phoneNumber,
-
-                              verificationCompleted:
-                                  (PhoneAuthCredential credential) async {},
-
-                              verificationFailed: (FirebaseAuthException e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      e.message ?? 'Verification failed',
-                                    ),
-                                  ),
-                                );
-                              },
-
-                              codeSent:
-                                  (String verificationId, int? resendToken) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => LoginOtpScreen(
-                                          verificationId: verificationId,
-                                          phoneNumber: phoneNumber,
+                                  if (phone.isEmpty || phone.length < 9) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "Enter valid phone number",
                                         ),
                                       ),
                                     );
-                                  },
+                                    return;
+                                  }
 
-                              codeAutoRetrievalTimeout:
-                                  (String verificationId) {},
-                            );
-                          },
+                                  setState(() {
+                                    isSendingOtp = true;
+                                  });
+
+                                  String phoneNumber = '+962$phone';
+
+                                  await FirebaseAuth.instance.verifyPhoneNumber(
+                                    phoneNumber: phoneNumber,
+                                    verificationCompleted:
+                                        (
+                                          PhoneAuthCredential credential,
+                                        ) async {},
+                                    verificationFailed:
+                                        (FirebaseAuthException e) {
+                                          setState(() {
+                                            isSendingOtp = false;
+                                          });
+
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                e.message ??
+                                                    'Verification failed',
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                    codeSent:
+                                        (
+                                          String verificationId,
+                                          int? resendToken,
+                                        ) {
+                                          setState(() {
+                                            isSendingOtp = false;
+                                          });
+
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  LoginOtpScreen(
+                                                    verificationId:
+                                                        verificationId,
+                                                    phoneNumber: phoneNumber,
+                                                  ),
+                                            ),
+                                          );
+                                        },
+                                    codeAutoRetrievalTimeout:
+                                        (String verificationId) {
+                                          setState(() {
+                                            isSendingOtp = false;
+                                          });
+                                        },
+                                  );
+                                },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFF2F80ED),
+                            backgroundColor: Color.fromARGB(255, 238, 238, 238),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text("Send OTP", style: TextStyle(fontSize: 16)),
-                              SizedBox(width: 10),
-                              Icon(Icons.arrow_forward),
-                            ],
-                          ),
+
+                          child: isSendingOtp
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xFFFFFFFF),
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "Send OTP",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Color(0xFF2F80ED),
+                                      ),
+                                    ),
+                                    SizedBox(width: 10),
+                                    Icon(
+                                      Icons.arrow_forward,
+                                      color: Color(0xFF2F80ED),
+                                    ),
+                                  ],
+                                ),
                         ),
                       ),
 

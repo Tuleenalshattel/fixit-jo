@@ -1,6 +1,7 @@
+import 'package:fixitjo_app/screens/dashboard_page.dart';
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
 import 'dart:async';
+import 'dashboard_page.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -25,7 +26,7 @@ class _SplashScreenState extends State<SplashScreen>
     Timer(const Duration(seconds: 3), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
+        MaterialPageRoute(builder: (context) => const DashboardPage()),
       );
     });
   }

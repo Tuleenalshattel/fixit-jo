@@ -1,5 +1,4 @@
 import 'package:fixitjo_app/screens/chatbot_screen.dart';
-import 'package:fixitjo_app/screens/map_screen.dart';
 import 'package:flutter/material.dart';
 import 'profile_customer_screen.dart';
 import 'request_service_screen.dart';
@@ -8,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'rating_screen.dart';
 import 'tracking_screen.dart';
+import 'all_categories.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,6 +19,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String searchText = "";
   String customerName = "";
+  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -62,13 +63,13 @@ class _HomePageState extends State<HomePage> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   "WELCOME BACK",
                   style: TextStyle(fontSize: 10, color: Color(0xFF1E88E5)),
                 ),
                 Text(
                   "Hello ${customerName.isNotEmpty ? customerName : 'User'}",
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     color: Color(0xFF1E88E5),
                     fontWeight: FontWeight.bold,
@@ -90,21 +91,50 @@ class _HomePageState extends State<HomePage> {
         ),
 
         actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.notifications_none,
-              color: Color(0xFF1E88E5),
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NotificationScreen(),
-                ),
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('notifications')
+                .where(
+                  'userId',
+                  isEqualTo: FirebaseAuth.instance.currentUser?.uid,
+                )
+                .where('isRead', isEqualTo: false)
+                .snapshots(),
+            builder: (context, snapshot) {
+              final unreadCount = snapshot.data?.docs.length ?? 0;
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.notifications_none,
+                      color: Color(0xFF1E88E5),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NotificationScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
               );
             },
           ),
-          const SizedBox(width: 10),
         ],
       ),
 
@@ -113,7 +143,7 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// 🔵 TOP BOX + SEARCH
+            /// TOP CARD
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(30),
@@ -140,13 +170,22 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 20),
 
-                  /// 🔍 SEARCH
-                  _SearchBox(
+                  TextField(
                     onChanged: (value) {
                       setState(() {
                         searchText = value.toLowerCase();
                       });
                     },
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white,
+                      prefixIcon: const Icon(Icons.search),
+                      hintText: "Search...",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -154,11 +193,10 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 20),
 
-            /// 🔧 SERVICES
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Text(
+              children: [
+                const Text(
                   "Service Categories",
                   style: TextStyle(
                     fontSize: 18,
@@ -166,10 +204,23 @@ class _HomePageState extends State<HomePage> {
                     color: Color(0xFF1E88E5),
                   ),
                 ),
-                Text("View all", style: TextStyle(color: Color(0xFF1E88E5))),
+
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AllCategoriesScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    "View all",
+                    style: TextStyle(color: Color(0xFF1E88E5)),
+                  ),
+                ),
               ],
             ),
-
             const SizedBox(height: 15),
 
             GridView.count(
@@ -182,13 +233,10 @@ class _HomePageState extends State<HomePage> {
               children: [
                 if ("plumbing".contains(searchText))
                   buildCategory(Icons.plumbing, "Plumbing"),
-
                 if ("electrical".contains(searchText))
                   buildCategory(Icons.electrical_services, "Electrical"),
-
                 if ("carpentry".contains(searchText))
                   buildCategory(Icons.handyman, "Carpentry"),
-
                 if ("ac repair".contains(searchText))
                   buildCategory(Icons.ac_unit, "AC Repair"),
               ],
@@ -210,18 +258,15 @@ class _HomePageState extends State<HomePage> {
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('service_requests')
+                  .where(
+                    'customerId',
+                    isEqualTo: FirebaseAuth.instance.currentUser!.uid,
+                  )
                   .orderBy('createdAt', descending: true)
                   .limit(1)
                   .snapshots(),
+
               builder: (context, snapshot) {
-                print(
-                  "CURRENT USER UID: ${FirebaseAuth.instance.currentUser?.uid}",
-                );
-
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Container(
                     padding: const EdgeInsets.all(12),
@@ -238,34 +283,11 @@ class _HomePageState extends State<HomePage> {
 
                 final data =
                     snapshot.data!.docs.first.data() as Map<String, dynamic>;
+
                 final requestId = snapshot.data!.docs.first.id;
 
-                final String category =
-                    data['category']?.toString() ?? 'Service';
+                final status = data['status'] ?? 'pending';
 
-                final String technicianName =
-                    data['technicianName']?.toString() ?? 'Waiting...';
-
-                final String arrivalTime =
-                    data['arrivalTime']?.toString() ?? '';
-
-                final String status = data['status']?.toString() ?? 'pending';
-
-                final bool isRated = data['rating'] != null;
-
-                if (status == 'completed' && isRated) {
-                  return Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      "No ongoing requests",
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  );
-                }
                 return Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -275,7 +297,6 @@ class _HomePageState extends State<HomePage> {
                   child: Row(
                     children: [
                       CircleAvatar(
-                        radius: 25,
                         backgroundColor: Colors.blue.shade100,
                         child: const Icon(Icons.handyman, color: Colors.blue),
                       ),
@@ -286,37 +307,43 @@ class _HomePageState extends State<HomePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              category,
+                              data['category'] ?? '',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
+
                             const SizedBox(height: 5),
+
                             Text(
                               status == 'accepted'
-                                  ? "Technician: $technicianName"
+                                  ? "Technician assigned"
                                   : status == 'completed'
-                                  ? "Service completed"
-                                  : "Waiting for technician...",
+                                  ? "Completed"
+                                  : "Waiting...",
                               style: const TextStyle(color: Colors.grey),
                             ),
-                            if (status == 'accepted') ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                "Arriving in: $arrivalTime",
+                            const SizedBox(height: 6),
 
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                            ],
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.phone,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
+
+                                const SizedBox(width: 6),
+
+                                Text(
+                                  data['technicianPhone'] ?? '',
+                                  style: const TextStyle(color: Colors.grey),
+                                ),
+                              ],
+                            ),
                             if (status == 'accepted') ...[
                               const SizedBox(height: 8),
-                              ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF1E88E5),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                ),
+                              ElevatedButton(
                                 onPressed: () {
                                   Navigator.push(
                                     context,
@@ -328,20 +355,10 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                   );
                                 },
-                                icon: const Icon(
-                                  Icons.location_on,
-                                  color: Colors.white,
-                                  size: 16,
-                                ),
-                                label: const Text(
-                                  'Track Technician',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                  ),
-                                ),
+                                child: const Text("Track"),
                               ),
                             ],
+
                             if (status == 'completed' &&
                                 data['rating'] == null) ...[
                               const SizedBox(height: 8),
@@ -369,29 +386,6 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                       ),
-
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: status == 'accepted'
-                              ? Colors.green.shade100
-                              : Colors.orange.shade100,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          status.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: status == 'accepted'
-                                ? Colors.green
-                                : Colors.orange,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 );
@@ -401,11 +395,30 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
 
+      floatingActionButton: FloatingActionButton.small(
+        backgroundColor: const Color(0xFF1E88E5),
+        child: const Icon(Icons.chat, color: Colors.white),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ChatbotScreen()),
+          );
+        },
+      ),
+
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        currentIndex: _currentIndex,
         selectedItemColor: const Color(0xFF1E88E5),
         unselectedItemColor: Colors.grey,
-        currentIndex: 0,
+
         onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+
           if (index == 1) {
             Navigator.push(
               context,
@@ -414,19 +427,8 @@ class _HomePageState extends State<HomePage> {
               ),
             );
           }
+
           if (index == 2) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const MapScreen()),
-            );
-          }
-          if (index == 3) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ChatbotScreen()),
-            );
-          }
-          if (index == 4) {
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -436,11 +438,10 @@ class _HomePageState extends State<HomePage> {
             );
           }
         },
+
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.add), label: "Request"),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: "Map"),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
@@ -448,45 +449,30 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget buildCategory(IconData icon, String title) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            backgroundColor: Colors.blue.shade100,
-            child: Icon(icon, color: Colors.blue),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RequestServiceScreen(selectedService: title),
           ),
-          const SizedBox(height: 10),
-          Text(title),
-        ],
-      ),
-    );
-  }
-}
-
-class _SearchBox extends StatelessWidget {
-  final Function(String) onChanged;
-
-  const _SearchBox({required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: TextField(
-        onChanged: onChanged,
-        decoration: const InputDecoration(
-          icon: Icon(Icons.search),
-          hintText: "Search for electrical, plumbing...",
-          border: InputBorder.none,
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              backgroundColor: Colors.blue.shade100,
+              child: Icon(icon, color: Colors.blue),
+            ),
+            const SizedBox(height: 10),
+            Text(title),
+          ],
         ),
       ),
     );
