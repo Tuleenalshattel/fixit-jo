@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'request_service_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 class AllCategoriesScreen extends StatefulWidget {
   const AllCategoriesScreen({super.key});
@@ -28,8 +30,9 @@ class _AllCategoriesScreenState extends State<AllCategoriesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context);
     return Scaffold(
-      appBar: AppBar(title: const Text("All Services")),
+      appBar: AppBar(title: Text(lang.allServices)),
       body: Column(
         children: [
           Padding(
@@ -41,7 +44,7 @@ class _AllCategoriesScreenState extends State<AllCategoriesScreen> {
                 });
               },
               decoration: InputDecoration(
-                hintText: "Search services...",
+                hintText: lang.searchServices,
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 fillColor: Colors.grey.shade100,
@@ -70,7 +73,7 @@ class _AllCategoriesScreenState extends State<AllCategoriesScreen> {
                 }).toList();
 
                 if (services.isEmpty) {
-                  return const Center(child: Text("No services found"));
+                  return Center(child: Text(lang.noServicesFound));
                 }
 
                 return GridView.builder(
@@ -127,7 +130,7 @@ class _AllCategoriesScreenState extends State<AllCategoriesScreen> {
                             ),
                             const SizedBox(height: 10),
                             Text(
-                              title,
+                              lang.translateService(title),
                               style: TextStyle(
                                 color: isSelected ? Colors.white : Colors.black,
                                 fontWeight: FontWeight.bold,

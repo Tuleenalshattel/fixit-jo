@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 class ChatbotScreen extends StatefulWidget {
   const ChatbotScreen({super.key});
@@ -18,18 +20,19 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   File? _selectedImage;
 
   final String _systemPrompt =
-      'You are Jo Assistant, an AI helper for FixIt Jo, a home maintenance app in Amman, Jordan. '
+      'You are FixIt Assistant, an AI helper for FixIt Jo, a home maintenance app in Amman, Jordan. '
       'You ONLY answer questions related to home maintenance issues like plumbing, electrical, carpentry, AC, and heating. '
       'If the user asks about anything else, politely say you can only help with home maintenance. '
       'Always respond in the same language the user uses (Arabic or English). Be friendly and concise.';
 
   @override
   void initState() {
+    final lang = Provider.of<AppLanguage>(context, listen: false);
+
     super.initState();
     _messages.add({
       'role': 'bot',
-      'text':
-          'Hello! I am Jo Assistant 🔧\nHow can I help you with your home maintenance today?',
+      'text': lang.joAssistantGreeting,
       'image': null,
     });
   }
@@ -45,6 +48,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   Future<void> _sendMessage() async {
+    final lang = Provider.of<AppLanguage>(context, listen: false);
     final text = _controller.text.trim();
     if (text.isEmpty && _selectedImage == null) return;
 
@@ -68,7 +72,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         final response = await gemini.prompt(
           parts: [
             Part.text(
-              '$_systemPrompt\n\nUser: ${text.isEmpty ? "What is wrong with this?" : text}',
+              '$_systemPrompt\n\nUser: ${text.isEmpty ? lang.whatwrong : text}',
             ),
 
             // convert picture to bytes so gemini can understand
@@ -89,9 +93,10 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           parts: [Part.text('$_systemPrompt\n\nUser: $text')],
         );
         setState(() {
+          final lang = Provider.of<AppLanguage>(context, listen: false);
           _messages.add({
             'role': 'bot',
-            'text': response?.output ?? 'Sorry, I could not understand that.',
+            'text': response?.output ?? lang.couldNotUnderstand,
             'image': null,
           });
           _isLoading = false;
@@ -99,7 +104,12 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       }
     } catch (e) {
       setState(() {
-        _messages.add({'role': 'bot', 'text': 'Error: $e', 'image': null});
+        final lang = Provider.of<AppLanguage>(context, listen: false);
+        _messages.add({
+          'role': 'bot',
+          'text': '${lang.error}: $e',
+          'image': null,
+        });
         _isLoading = false;
       });
     }
@@ -121,11 +131,12 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context);
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: const Color(0xFF4FC3F7),
-        title: const Row(
+        title: Row(
           children: [
             CircleAvatar(
               backgroundColor: Colors.white,
@@ -136,7 +147,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Jo Assistant',
+                  lang.assistant,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -144,7 +155,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                   ),
                 ),
                 Text(
-                  'Online',
+                  lang.online,
                   style: TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
@@ -247,9 +258,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Image selected',
+                      lang.imageselected,
                       style: TextStyle(color: Colors.grey),
                     ),
                   ),
@@ -288,7 +299,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                     // can take arabic from laptop keybored
                     textDirection: TextDirection.rtl,
                     decoration: InputDecoration(
-                      hintText: 'Describe your issue...',
+                      hintText: lang.describeissue,
                       filled: true,
                       fillColor: const Color(0xFFF1F1F1),
                       border: OutlineInputBorder(

@@ -6,6 +6,8 @@ import 'edit_profile_customer.dart';
 import 'settings_customer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 class ProfilePage extends StatelessWidget {
   final String name;
@@ -40,9 +42,27 @@ class ProfilePage extends StatelessWidget {
     return Colors.orange;
   }
 
+  String translateStatus(String status, AppLanguage lang) {
+    switch (status.toUpperCase()) {
+      case 'COMPLETED':
+        return lang.complete;
+      case 'ACCEPTED':
+        return lang.technicianAssigned;
+      case 'DECLINED':
+        return lang.isArabic ? 'مرفوض' : 'Declined';
+      case 'ARRIVED':
+        return lang.technicianArrived;
+      case 'CANCELLED':
+        return lang.isArabic ? 'ملغي' : 'Cancelled';
+      default:
+        return lang.waitingForTechnician;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
+    final lang = Provider.of<AppLanguage>(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F7),
@@ -54,11 +74,11 @@ class ProfilePage extends StatelessWidget {
               child: Row(
                 children: [
                   const SizedBox(width: 48),
-                  const Expanded(
+                  Expanded(
                     child: Center(
                       child: Text(
-                        "Profile",
-                        style: TextStyle(
+                        lang.profile,
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
                           color: Colors.blue,
@@ -110,23 +130,23 @@ class ProfilePage extends StatelessWidget {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
-                  return const Column(
+                  return Column(
                     children: [
                       Text(
-                        "User",
-                        style: TextStyle(
+                        lang.user,
+                        style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: 5),
-                      Text("", style: TextStyle(color: Colors.grey)),
+                      const SizedBox(height: 5),
+                      const Text("", style: TextStyle(color: Colors.grey)),
                     ],
                   );
                 }
 
                 final data = snapshot.data!.data() as Map<String, dynamic>?;
-                final realName = data?['name']?.toString() ?? 'User';
+                final realName = data?['name']?.toString() ?? lang.user;
                 final realPhone = data?['phone']?.toString() ?? '';
 
                 return Column(
@@ -167,10 +187,10 @@ class ProfilePage extends StatelessWidget {
                       colors: [Color(0xFF5DBCEB), Color(0xFF4AA3D8)],
                     ),
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Text(
-                      "Edit Profile",
-                      style: TextStyle(
+                      lang.editProfile,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
                       ),
@@ -185,12 +205,15 @@ class ProfilePage extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
-                children: const [
+                children: [
                   Text(
-                    "My Requests",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    lang.myRequests,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  Spacer(),
+                  const Spacer(),
                 ],
               ),
             ),
@@ -209,17 +232,16 @@ class ProfilePage extends StatelessWidget {
                   }
 
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Text(
-                        "No requests yet",
-                        style: TextStyle(color: Colors.grey),
+                        lang.noRequestsYet,
+                        style: const TextStyle(color: Colors.grey),
                       ),
                     );
                   }
 
                   final requests = snapshot.data!.docs;
 
-                  // ترتيب من الأحدث للأقدم
                   requests.sort((a, b) {
                     final aTime = (a.data() as Map)['createdAt'] as Timestamp?;
                     final bTime = (b.data() as Map)['createdAt'] as Timestamp?;
@@ -233,15 +255,16 @@ class ProfilePage extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final data =
                           requests[index].data() as Map<String, dynamic>;
+
                       final title = data['category']?.toString() ?? 'Service';
                       final status =
                           data['status']?.toString().toUpperCase() ?? 'PENDING';
                       final createdAt = data['createdAt'] as Timestamp?;
 
                       return RequestItem(
-                        title: title,
+                        title: lang.translateService(title),
                         date: formatDate(createdAt),
-                        status: status,
+                        status: translateStatus(status, lang),
                         icon: getServiceIcon(title),
                         color: getStatusColor(status),
                       );
@@ -270,9 +293,9 @@ class ProfilePage extends StatelessWidget {
                   );
                 },
                 icon: const Icon(Icons.logout, color: Colors.red),
-                label: const Text(
-                  "Logout",
-                  style: TextStyle(color: Colors.red),
+                label: Text(
+                  lang.logout,
+                  style: const TextStyle(color: Colors.red),
                 ),
               ),
             ),
@@ -286,6 +309,7 @@ class ProfilePage extends StatelessWidget {
         unselectedItemColor: Colors.grey,
         onTap: (index) {
           if (index == 0) Navigator.pop(context);
+
           if (index == 1) {
             Navigator.push(
               context,
@@ -294,20 +318,20 @@ class ProfilePage extends StatelessWidget {
               ),
             );
           }
-          if (index == 2) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    const ProfilePage(name: '', phone: '', userType: ''),
-              ),
-            );
-          }
         },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.add), label: "Request"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+        items: [
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.home),
+            label: lang.home,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.add),
+            label: lang.request,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.person),
+            label: lang.profile,
+          ),
         ],
       ),
 
@@ -376,7 +400,14 @@ class RequestItem extends StatelessWidget {
               color: color.withOpacity(0.2),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text(status, style: TextStyle(color: color, fontSize: 12)),
+            child: Text(
+              status,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),

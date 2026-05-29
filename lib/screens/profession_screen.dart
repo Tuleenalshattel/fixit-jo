@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'plumbing_screen.dart';
 import 'technicians_by_profession_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 class ProfessionScreen extends StatefulWidget {
   const ProfessionScreen({super.key});
@@ -40,6 +41,7 @@ class _ProfessionScreenState extends State<ProfessionScreen> {
   }
 
   void addProfessionDialog() {
+    final lang = Provider.of<AppLanguage>(context, listen: false);
     titleController.clear();
     descriptionController.clear();
 
@@ -47,25 +49,25 @@ class _ProfessionScreenState extends State<ProfessionScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Add Profession"),
+          title: Text(lang.addProfession),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: titleController,
-                decoration: const InputDecoration(hintText: "Profession name"),
+                decoration: InputDecoration(hintText: lang.ProfessioName),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: descriptionController,
-                decoration: const InputDecoration(hintText: "Description"),
+                decoration: InputDecoration(hintText: lang.description),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+              child: Text(lang.cancel),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -80,7 +82,7 @@ class _ProfessionScreenState extends State<ProfessionScreen> {
                 if (!context.mounted) return;
                 Navigator.pop(context);
               },
-              child: const Text("Add"),
+              child: Text(lang.add),
             ),
           ],
         );
@@ -89,6 +91,7 @@ class _ProfessionScreenState extends State<ProfessionScreen> {
   }
 
   void editProfession(String docId, String oldTitle, String oldDescription) {
+    final lang = Provider.of<AppLanguage>(context, listen: false);
     titleController.text = oldTitle;
     descriptionController.text = oldDescription;
 
@@ -96,7 +99,7 @@ class _ProfessionScreenState extends State<ProfessionScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Edit Profession"),
+          title: Text(lang.editProfession),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -108,7 +111,7 @@ class _ProfessionScreenState extends State<ProfessionScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+              child: Text(lang.cancel),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -123,7 +126,7 @@ class _ProfessionScreenState extends State<ProfessionScreen> {
                 if (!context.mounted) return;
                 Navigator.pop(context);
               },
-              child: const Text("Save"),
+              child: Text(lang.save),
             ),
           ],
         );
@@ -137,6 +140,7 @@ class _ProfessionScreenState extends State<ProfessionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context);
     return Scaffold(
       backgroundColor: const Color(0xffF5F5F5),
       body: SafeArea(
@@ -144,13 +148,13 @@ class _ProfessionScreenState extends State<ProfessionScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           children: [
             const SizedBox(height: 10),
-            const Text(
-              "Manage Professions",
+            Text(
+              lang.manageProfessions,
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 35),
-            const Text(
-              "Professional Categories",
+            Text(
+              lang.professionalCategories,
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 18),
@@ -165,14 +169,14 @@ class _ProfessionScreenState extends State<ProfessionScreen> {
                   ),
                   borderRadius: BorderRadius.circular(35),
                 ),
-                child: const Center(
+                child: Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.add, color: Colors.white),
                       SizedBox(width: 8),
                       Text(
-                        "Add New Profession",
+                        lang.addNewProfession,
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -200,10 +204,10 @@ class _ProfessionScreenState extends State<ProfessionScreen> {
                     searchQuery = value;
                   });
                 },
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   border: InputBorder.none,
                   icon: Icon(Icons.search, color: Colors.grey),
-                  hintText: "Search service...",
+                  hintText: lang.searchProfessions,
                   hintStyle: TextStyle(color: Colors.grey, fontSize: 15),
                 ),
               ),
@@ -221,9 +225,9 @@ class _ProfessionScreenState extends State<ProfessionScreen> {
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
-                      "No professions found",
+                      lang.noProfessionFound,
                       style: TextStyle(color: Colors.grey),
                     ),
                   );
@@ -253,7 +257,7 @@ class _ProfessionScreenState extends State<ProfessionScreen> {
                           docId: doc.id,
                           title: title,
                           description: description,
-                          count: "$count Active Pros",
+                          count: "$count ${lang.activePros}",
                           icon: getIcon(title),
                           color: const Color(0xffBFE5FF),
                         );
@@ -279,6 +283,7 @@ class _ProfessionScreenState extends State<ProfessionScreen> {
     required IconData icon,
     required Color color,
   }) {
+    final lang = Provider.of<AppLanguage>(context);
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -328,7 +333,7 @@ class _ProfessionScreenState extends State<ProfessionScreen> {
             ),
             const SizedBox(height: 18),
             Text(
-              title,
+              lang.translateService(title),
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),

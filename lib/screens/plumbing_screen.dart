@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 class PlumbingScreen extends StatefulWidget {
   const PlumbingScreen({super.key});
@@ -12,6 +14,7 @@ class _PlumbingScreenState extends State<PlumbingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context);
     return Scaffold(
       backgroundColor: const Color(0xffF7F7F7),
 
@@ -27,8 +30,8 @@ class _PlumbingScreenState extends State<PlumbingScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            navItem(Icons.home, "Home"),
-            navItem(Icons.assessment_outlined, "Report"),
+            navItem(Icons.home, lang.home),
+            navItem(Icons.assessment_outlined, lang.report),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
               decoration: BoxDecoration(
@@ -37,11 +40,11 @@ class _PlumbingScreenState extends State<PlumbingScreen> {
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
+                children: [
                   Icon(Icons.handyman, color: Colors.black),
                   SizedBox(height: 3),
                   Text(
-                    "Professions",
+                    lang.professions,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -51,7 +54,7 @@ class _PlumbingScreenState extends State<PlumbingScreen> {
                 ],
               ),
             ),
-            navItem(Icons.settings_outlined, "Settings"),
+            navItem(Icons.settings_outlined, lang.settings),
           ],
         ),
       ),
@@ -71,8 +74,8 @@ class _PlumbingScreenState extends State<PlumbingScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  "Plumbing Technicians",
+                Text(
+                  lang.plumbingTechnicians,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w500,
@@ -84,8 +87,8 @@ class _PlumbingScreenState extends State<PlumbingScreen> {
 
             const SizedBox(height: 30),
 
-            const Text(
-              "MANAGEMENT PORTAL",
+            Text(
+              lang.managementPortal,
               style: TextStyle(
                 fontSize: 14,
                 letterSpacing: 2,
@@ -96,16 +99,14 @@ class _PlumbingScreenState extends State<PlumbingScreen> {
 
             const SizedBox(height: 10),
 
-            const Text(
-              "Expert Plumbers",
+            Text(
+              lang.expertPlumbers,
               style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 16),
 
-            const Text(
-              "Manage and monitor plumbing service quality.\nReview technician performance and handle feedback.",
-            ),
+            Text(lang.plumbingDescription),
 
             const SizedBox(height: 24),
 

@@ -9,6 +9,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 class RequestServiceScreen extends StatefulWidget {
   final String? selectedService;
@@ -54,6 +56,40 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
     if (name == "Furniture") return Icons.chair;
 
     return Icons.work;
+  }
+
+  String translateService(String service, AppLanguage lang) {
+    switch (service) {
+      case 'Plumbing':
+        return lang.plumbing;
+
+      case 'Electrical':
+        return lang.electrical;
+
+      case 'Carpentry':
+        return lang.carpentry;
+
+      case 'Cleaning':
+        return lang.cleaning;
+
+      case 'AC Repair':
+        return lang.acRepair;
+
+      case 'Painting':
+        return lang.painting;
+
+      case 'Blacksmith':
+        return lang.blacksmith;
+
+      case 'Heating':
+        return lang.heating;
+
+      case 'Furniture':
+        return lang.furniture;
+
+      default:
+        return service;
+    }
   }
 
   Future<void> _getCurrentLocation() async {
@@ -136,6 +172,8 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
   }
 
   Future<void> _pickImage() async {
+    final lang = Provider.of<AppLanguage>(context, listen: false);
+
     if (_images.length >= 5) return;
 
     final source = await showModalBottomSheet<ImageSource>(
@@ -145,12 +183,12 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt),
-              title: const Text("Take Photo"),
+              title: Text(lang.takephoto),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text("Choose from Gallery"),
+              title: Text(lang.choosefromgallery),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
           ],
@@ -172,7 +210,7 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Image added")));
+      ).showSnackBar(SnackBar(content: Text(lang.imageAdded)));
     }
   }
 
@@ -184,11 +222,12 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
     });
 
     final user = FirebaseAuth.instance.currentUser;
+    final lang = Provider.of<AppLanguage>(context, listen: false);
 
     if (user == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('User not logged in')));
+      ).showSnackBar(SnackBar(content: Text(lang.userNotLoggedIn)));
       setState(() => _isSubmitting = false);
       return;
     }
@@ -196,7 +235,7 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
     if (_descriptionController.text.trim().isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter description')));
+      ).showSnackBar(SnackBar(content: Text(lang.pleaseEnterDescription)));
       setState(() => _isSubmitting = false);
       return;
     }
@@ -208,9 +247,9 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
 
     if (existingRequests.docs.isNotEmpty) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You already have an active request')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(lang.activeRequestExists)));
       setState(() => _isSubmitting = false);
       return;
     }
@@ -219,9 +258,9 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
 
     if (nearestTechnicianId == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No available technician found')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(lang.noTechnicianFound)));
       setState(() => _isSubmitting = false);
       return;
     }
@@ -232,7 +271,7 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
           .doc(user.uid)
           .get();
 
-      final customerName = userDoc.data()?['name'] ?? 'Customer';
+      final customerName = userDoc.data()?['name'] ?? lang.customer;
       final customerPhone = userDoc.data()?['phone'] ?? '';
 
       final docRef = await FirebaseFirestore.instance
@@ -268,9 +307,9 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Request submitted successfully')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(lang.requestSubmitted)));
 
       _descriptionController.clear();
       setState(() => _isSubmitting = false);
@@ -286,6 +325,7 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
   }
 
   Widget servicesFromFirebase() {
+    final lang = Provider.of<AppLanguage>(context);
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('service').snapshots(),
       builder: (context, snapshot) {
@@ -296,7 +336,7 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
         final services = snapshot.data!.docs;
 
         if (services.isEmpty) {
-          return const Text("No services available");
+          return Text(lang.Noservicesavailable);
         }
 
         return SingleChildScrollView(
@@ -343,7 +383,7 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        serviceName,
+                        translateService(serviceName, lang),
                         style: TextStyle(
                           fontSize: 12,
                           color: isSelected
@@ -367,6 +407,7 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
@@ -374,8 +415,8 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
         elevation: 0,
         automaticallyImplyLeading: false,
         centerTitle: true,
-        title: const Text(
-          'Request Service',
+        title: Text(
+          lang.requestService,
           style: TextStyle(
             color: Colors.black87,
             fontWeight: FontWeight.bold,
@@ -388,8 +429,8 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Select Service',
+            Text(
+              lang.selectService,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
 
@@ -399,8 +440,8 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
 
             const SizedBox(height: 24),
 
-            const Text(
-              'Description',
+            Text(
+              lang.description,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
 
@@ -420,9 +461,8 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
               child: TextField(
                 controller: _descriptionController,
                 maxLines: 4,
-                decoration: const InputDecoration(
-                  hintText:
-                      'Briefly describe the issue (e.g., leaky kitchen sink faucet)...',
+                decoration: InputDecoration(
+                  hintText: lang.describeIssueHint,
                   hintStyle: TextStyle(color: Colors.black38, fontSize: 13),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.all(16),
@@ -435,14 +475,14 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Location',
+                Text(
+                  lang.location,
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 TextButton(
                   onPressed: _getCurrentLocation,
-                  child: const Text(
-                    'Edit Location',
+                  child: Text(
+                    lang.editLocation,
                     style: TextStyle(color: Color(0xFF1565C0)),
                   ),
                 ),
@@ -507,8 +547,8 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
 
             const SizedBox(height: 24),
 
-            const Text(
-              'Upload Photos',
+            Text(
+              lang.uploadPhotos,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
 
@@ -586,8 +626,8 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Attach images of the issue',
+                    Text(
+                      lang.attachImages,
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
                         fontSize: 14,
@@ -596,8 +636,8 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
                     const SizedBox(height: 4),
                     Text(
                       _images.isEmpty
-                          ? 'Camera or Gallery - Maximum 5 photos'
-                          : '${_images.length}/5 photos added',
+                          ? lang.cameraOrGallery
+                          : lang.photosAdded(_images.length),
                       style: const TextStyle(
                         color: Colors.black45,
                         fontSize: 12,
@@ -630,7 +670,7 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      _isSubmitting ? 'Submitting...' : 'Submit Request',
+                      _isSubmitting ? lang.submitting : lang.submitRequest,
 
                       style: const TextStyle(
                         fontSize: 16,
@@ -680,10 +720,13 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
             );
           }
         },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Requests'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: lang.home),
+          BottomNavigationBarItem(icon: Icon(Icons.add), label: lang.request),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: lang.profile,
+          ),
         ],
       ),
     );

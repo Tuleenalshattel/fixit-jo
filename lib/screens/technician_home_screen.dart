@@ -6,6 +6,8 @@ import 'package:geolocator/geolocator.dart';
 import 'tracking_screen.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:fixitjo_app/screens/notification_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 class TechnicianHomeScreen extends StatefulWidget {
   const TechnicianHomeScreen({super.key});
@@ -33,12 +35,16 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
     updateTechnicianLocation();
   }
 
-  Future<String> getAddressFromLatLng(double lat, double lng) async {
+  Future<String> getAddressFromLatLng(
+    double lat,
+    double lng,
+    dynamic lang,
+  ) async {
     try {
       final placemarks = await placemarkFromCoordinates(lat, lng);
 
       if (placemarks.isEmpty) {
-        return "Location not available";
+        return lang.locationNotAvailable;
       }
 
       final place = placemarks.first;
@@ -53,7 +59,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         city,
       ].where((part) => part.trim().isNotEmpty).join(', ');
     } catch (e) {
-      return "Location not available";
+      return lang.locationNotAvailable;
     }
   }
 
@@ -91,8 +97,9 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
     }
 
     if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever)
+        permission == LocationPermission.deniedForever) {
       return;
+    }
 
     final position = await Geolocator.getCurrentPosition();
 
@@ -106,7 +113,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         });
   }
 
-  Future<void> acceptRequest(String requestId) async {
+  Future<void> acceptRequest(String requestId, dynamic lang) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
@@ -117,9 +124,9 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
 
     if (!techDoc.exists) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Technician data not found')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(lang.technicianDataNotFound)));
       return;
     }
 
@@ -273,7 +280,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
-                value: selectedType,
+                initialValue: selectedType,
                 items: const [
                   DropdownMenuItem(
                     value: "Unpaid Service",
@@ -342,6 +349,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF4F3F3),
       body: SafeArea(
@@ -352,7 +360,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
             children: [
               Row(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 22,
                     backgroundColor: Colors.white,
                     child: Icon(Icons.person, color: Color(0xFF2196F3)),
@@ -361,12 +369,12 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "WELCOME BACK",
+                      Text(
+                        lang.welcomeBack,
                         style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                       Text(
-                        "Hello, $technicianName",
+                        "${lang.hello}, $technicianName",
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -431,24 +439,31 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                 child: Column(
                   children: [
                     Row(
-                      children: const [
-                        CircleAvatar(
+                      children: [
+                        const CircleAvatar(
                           backgroundColor: Color(0xFFE6EEF1),
                           child: Icon(Icons.bolt, color: Color(0xFF2196F3)),
                         ),
-                        SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Service Status",
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              "Manage your work visibility",
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ],
+                        const SizedBox(width: 10),
+
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                lang.serviceStatus,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                lang.manageVisibility,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -489,7 +504,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                                 ),
                                 child: Center(
                                   child: Text(
-                                    "Available",
+                                    lang.available,
                                     style: TextStyle(
                                       color: isAvailable
                                           ? Colors.white
@@ -529,7 +544,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                                 ),
                                 child: Center(
                                   child: Text(
-                                    "Busy",
+                                    lang.busy,
                                     style: TextStyle(
                                       color: !isAvailable
                                           ? Colors.white
@@ -570,9 +585,9 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                       Row(
                         children: [
                           statCard(
-                            "JOBS DONE",
+                            lang.jobsDone,
                             liveJobsDone.toString(),
-                            "Completed jobs",
+                            lang.completedJobs,
                           ),
                         ],
                       ),
@@ -580,9 +595,9 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                       Row(
                         children: [
                           statCard(
-                            "RATING",
+                            lang.rating,
                             "${liveRatingAverage.toStringAsFixed(1)} ★",
-                            "$liveRatingCount reviews",
+                            "$liveRatingCount ${lang.reviews}",
                           ),
                         ],
                       ),
@@ -593,15 +608,15 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
 
               const SizedBox(height: 20),
 
-              const Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Incoming Requests",
+                    lang.incomingRequests,
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    "Live request",
+                    lang.liveRequest,
                     style: TextStyle(color: TechnicianHomeScreen.primary),
                   ),
                 ],
@@ -609,7 +624,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
 
               const SizedBox(height: 10),
 
-              // Stream of requests
+              // Observe Pattern
               StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('service_requests')
@@ -645,9 +660,9 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
-                          "No requests yet",
+                          lang.noRequestsYet,
                           style: TextStyle(color: Colors.grey),
                         ),
                       ),
@@ -671,9 +686,9 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
-                          "No current job",
+                          lang.noCurrentJob,
                           style: TextStyle(color: Colors.grey),
                         ),
                       ),
@@ -703,9 +718,9 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                       );
 
                       IconData serviceIcon = Icons.build;
-                      if (category == 'Plumbing')
+                      if (category == 'Plumbing') {
                         serviceIcon = Icons.plumbing;
-                      else if (category == 'Electrical')
+                      } else if (category == 'Electrical')
                         serviceIcon = Icons.electrical_services;
                       else if (category == 'Carpentry')
                         serviceIcon = Icons.handyman;
@@ -726,8 +741,9 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                         imageUrls: imageUrls,
                         icon: serviceIcon,
                         status: status,
+                        lang: lang,
                         badge: "NEW REQUEST",
-                        onAccept: () => acceptRequest(doc.id),
+                        onAccept: () => acceptRequest(doc.id, lang),
                         onDecline: () => declineRequest(doc.id),
                       );
                     }).toList(),
@@ -757,9 +773,12 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
             );
           }
         },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "HOME"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "PROFILE"),
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: lang.home),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: lang.profile,
+          ),
         ],
       ),
     );
@@ -802,6 +821,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
     required String time,
     required IconData icon,
     required String status,
+    required dynamic lang,
     String? badge,
     required VoidCallback onAccept,
     required VoidCallback onDecline,
@@ -889,11 +909,11 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 FutureBuilder<String>(
-                  future: getAddressFromLatLng(lat, lng),
+                  future: getAddressFromLatLng(lat, lng, lang),
                   builder: (context, snapshot) {
-                    final address = snapshot.data ?? "Loading location...";
+                    final address = snapshot.data ?? lang.locationNotAvailable;
 
                     return Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -967,8 +987,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                             ),
                           ),
                           onPressed: onAccept,
-                          child: const Text(
-                            "Accept",
+                          child: Text(
+                            lang.accept,
                             style: TextStyle(color: Colors.white),
                           ),
                         ),
@@ -984,8 +1004,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                             ),
                           ),
                           onPressed: onDecline,
-                          child: const Text(
-                            "Decline",
+                          child: Text(
+                            lang.decline,
                             style: TextStyle(color: Colors.black),
                           ),
                         ),
@@ -1017,8 +1037,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                           ),
                         );
                       },
-                      child: const Text(
-                        "Track Customer",
+                      child: Text(
+                        lang.trackCustomer,
                         style: TextStyle(color: Colors.white),
                       ),
                     ),
@@ -1074,11 +1094,11 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
 
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Job Completed")),
+                          SnackBar(content: Text(lang.jobCompleted)),
                         );
                       },
-                      child: const Text(
-                        "Finish Job",
+                      child: Text(
+                        lang.finishJob,
                         style: TextStyle(color: Colors.white),
                       ),
                     ),
@@ -1101,7 +1121,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                           borderRadius: BorderRadius.circular(30),
                         ),
                       ),
-                      child: const Text("Report Customer"),
+                      child: Text(lang.reportCustomer),
                     ),
                   ),
                 ],

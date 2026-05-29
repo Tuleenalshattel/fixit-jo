@@ -4,6 +4,8 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 enum UserType { customer, technician }
 
@@ -84,6 +86,7 @@ class _RegisterPageState extends State<RegisterPage> {
     required String hint,
     required IconData icon,
     required TextEditingController controller,
+    required AppLanguage lang,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -93,6 +96,8 @@ class _RegisterPageState extends State<RegisterPage> {
       ),
       child: TextField(
         controller: controller,
+        textAlign: lang.isArabic ? TextAlign.right : TextAlign.left,
+        textDirection: lang.isArabic ? TextDirection.rtl : TextDirection.ltr,
         decoration: InputDecoration(
           border: InputBorder.none,
           icon: Icon(icon, color: Colors.grey),
@@ -150,6 +155,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context);
     return Scaffold(
       backgroundColor: Colors.white,
 
@@ -220,17 +226,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 const SizedBox(height: 20),
 
-                const Text(
-                  "Create an Account",
+                Text(
+                  lang.createAccount,
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 5),
 
-                const Text(
-                  "Join FixIt Jo and start growing your business.",
-                  style: TextStyle(color: Colors.black54),
-                ),
+                Text(lang.joinFixIt, style: TextStyle(color: Colors.black54)),
 
                 if (_selectedUserType == UserType.technician) ...[
                   const SizedBox(height: 25),
@@ -251,23 +254,25 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   const SizedBox(height: 10),
 
-                  const Text(
-                    "Profile Picture",
+                  Text(
+                    lang.profilePicture,
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
 
-                  const Text(
-                    "Recommended: Clear face photo in daylight.",
+                  Text(
+                    lang.photoRecommendation,
                     style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
 
                 const SizedBox(height: 25),
 
-                const Align(
-                  alignment: Alignment.centerLeft,
+                Align(
+                  alignment: lang.isArabic
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
                   child: Text(
-                    "I am a...",
+                    lang.iAmA,
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -277,7 +282,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 Row(
                   children: [
                     buildUserCard(
-                      text: "Customer",
+                      text: lang.customer,
                       icon: Icons.person_outline,
                       type: UserType.customer,
                     ),
@@ -285,7 +290,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     const SizedBox(width: 12),
 
                     buildUserCard(
-                      text: "Technician",
+                      text: lang.technician,
                       icon: Icons.engineering,
                       type: UserType.technician,
                     ),
@@ -294,29 +299,35 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 const SizedBox(height: 25),
 
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text("Full Name"),
+                Align(
+                  alignment: lang.isArabic
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
+                  child: Text(lang.fullName),
                 ),
 
                 const SizedBox(height: 8),
 
                 buildTextField(
-                  hint: "Omar Hassan",
+                  lang: lang,
+                  hint: lang.nameExample,
                   icon: Icons.person,
                   controller: _nameController,
                 ),
 
                 const SizedBox(height: 18),
 
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text("Phone Number"),
+                Align(
+                  alignment: lang.isArabic
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
+                  child: Text(lang.phoneNumber),
                 ),
 
                 const SizedBox(height: 8),
 
                 buildTextField(
+                  lang: lang,
                   hint: "+962 7X XXX XXXX",
                   icon: Icons.phone,
                   controller: _phoneController,
@@ -326,16 +337,16 @@ class _RegisterPageState extends State<RegisterPage> {
                   const SizedBox(height: 25),
 
                   Row(
-                    children: const [
+                    children: [
                       Text(
-                        "Specialization",
+                        lang.specializations,
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
 
                       Spacer(),
 
                       Text(
-                        "SELECT MULTIPLE",
+                        lang.selectone,
                         style: TextStyle(fontSize: 11, color: Colors.grey),
                       ),
                     ],
@@ -353,7 +364,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       }
 
                       if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return const Text("No services available");
+                        return Text(lang.Noservicesavailable);
                       }
 
                       final services = snapshot.data!.docs;
@@ -366,7 +377,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           final serviceName = data['name']?.toString() ?? '';
 
                           return buildSpecialization(
-                            serviceName,
+                            lang.translateService(serviceName),
                             getServiceIcon(serviceName),
                           );
                         }).toList(),
@@ -378,8 +389,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   Row(
                     children: [
-                      const Text(
-                        "Years of Experience",
+                      Text(
+                        lang.yearsofexperiance,
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
 
@@ -415,10 +426,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      Text("1 YEAR"),
-                      Text("15 YEARS"),
-                      Text("30 YEARS"),
+                    children: [
+                      Text(lang.oneYear),
+                      Text(lang.fifteenYears),
+                      Text(lang.thirtyYears),
                     ],
                   ),
                 ],
@@ -432,9 +443,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           if (_nameController.text.isEmpty ||
                               _phoneController.text.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Please fill all fields"),
-                              ),
+                              SnackBar(content: Text(lang.pleasefillallfields)),
                             );
                             return;
                           }
@@ -461,7 +470,11 @@ class _RegisterPageState extends State<RegisterPage> {
                                 isLoading = false;
                               });
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("Error: ${e.message}")),
+                                SnackBar(
+                                  content: Text(
+                                    lang.errorMessage(e.message ?? ''),
+                                  ),
+                                ),
                               );
                             },
                             codeSent:
@@ -517,8 +530,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                 strokeWidth: 2,
                               ),
                             )
-                          : const Text(
-                              "Register",
+                          : Text(
+                              lang.register,
                               style: TextStyle(
                                 fontSize: 16,
                                 color: Color(0xFF2F80ED),
@@ -531,12 +544,12 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 const SizedBox(height: 15),
 
-                const Text.rich(
+                Text.rich(
                   TextSpan(
-                    text: "Already have an account? ",
+                    text: lang.alreadyHaveAccount,
                     children: [
                       TextSpan(
-                        text: "Login",
+                        text: lang.login,
                         style: TextStyle(
                           color: Colors.blue,
                           fontWeight: FontWeight.bold,
@@ -549,10 +562,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 if (_selectedUserType == UserType.technician) ...[
                   const SizedBox(height: 25),
 
-                  const Text(
-                    "BY CLICKING REGISTER, YOU AGREE TO OUR\n"
-                    "PROFESSIONAL TERMS OF SERVICE AND\n"
-                    "IDENTITY VERIFICATION POLICIES.",
+                  Text(
+                    lang.professionalTerms,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 10,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
+import '../services/app_language.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -11,6 +12,7 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
+    final lang = AppLanguage();
     return Scaffold(
       backgroundColor: const Color(0xffF3EFEF),
 
@@ -22,7 +24,11 @@ class _DashboardPageState extends State<DashboardPage> {
           children: [
             const SizedBox(width: 10),
             IconButton(
-              onPressed: () {},
+              onPressed: () {
+                setState(() {
+                  lang.toggleLanguage();
+                });
+              },
               icon: const Icon(Icons.language, color: Colors.black87),
             ),
             ElevatedButton(
@@ -38,7 +44,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   MaterialPageRoute(builder: (context) => const LoginPage()),
                 );
               },
-              child: const Text('Login', style: TextStyle(color: Colors.white)),
+              child: Text(lang.login, style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -92,10 +98,10 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Spacer(),
                       Text(
-                        'Fix It With jo,\nYour Trusted Partner\nFor Home Maintenance',
+                        lang.heroTitle,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 38,
@@ -111,9 +117,8 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(height: 38),
 
               _infoCard(
-                title: 'Why Choose FixIt Jo?',
-                description:
-                    'We will connect you with a group of specialised technicians to ensure hassle-free home maintenance with the highest standards of accuracy and professionalism.',
+                title: lang.whyChooseTitle,
+                description: lang.whyChooseDesc,
               ),
 
               const SizedBox(height: 28),
@@ -128,9 +133,9 @@ class _DashboardPageState extends State<DashboardPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Center(
+                    Center(
                       child: Text(
-                        'Complete Services',
+                        lang.completeServicesTitle,
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -138,8 +143,8 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
                     const SizedBox(height: 22),
-                    const Text(
-                      'From plumbing to electricity and air conditioning, we offer integrated solutions that cover all the needs of your home while ensuring high quality and speed of execution.',
+                    Text(
+                      lang.completeServicesDesc,
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.black54,
@@ -147,17 +152,11 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
                     const SizedBox(height: 28),
-                    _serviceItem(
-                      'Maintenance of smart electricity and lighting systems',
-                    ),
+                    _serviceItem(lang.service1),
                     const SizedBox(height: 18),
-                    _serviceItem(
-                      'Advanced plumbing solutions and water filters',
-                    ),
+                    _serviceItem(lang.service2),
                     const SizedBox(height: 18),
-                    _serviceItem(
-                      'maintenance of central air conditioning or heating devices',
-                    ),
+                    _serviceItem(lang.service3),
                     Row(
                       children: [
                         Container(
@@ -174,12 +173,8 @@ class _DashboardPageState extends State<DashboardPage> {
                             color: Color(0xFF1E88E5),
                           ),
                         ),
-                        const SizedBox(width: 14),
-                        const Expanded(
-                          child: Text(
-                            'And more services available according to your request',
-                          ),
-                        ),
+                        SizedBox(width: 14),
+                        Expanded(child: Text(lang.service4)),
                       ],
                     ),
                   ],
@@ -201,9 +196,8 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(height: 30),
 
               _featureCard(
-                title: 'Professional Technicians',
-                description:
-                    'We carefully verify the competence and experience of all the technicians who join us to ensure your comfort and the safety of your home and provide a service that befits you.',
+                title: lang.service5,
+                description: lang.feature1Desc,
                 icon: Icons.engineering,
                 cardColor: const Color(0xffDDEAF0),
               ),
@@ -211,24 +205,23 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(height: 24),
 
               _featureCard(
-                title: 'Control the maintenance of your home with ease',
-                description:
-                    'Through your personal account, you can track maintenance requests. Review invoices and communicate directly with your specialised technicians at any time.',
+                title: lang.feature2Title,
+                description: lang.feature2Desc,
                 icon: Icons.manage_accounts,
                 cardColor: const Color(0xffE8E4E4),
               ),
 
               const SizedBox(height: 50),
 
-              const Text(
-                'Team',
+              Text(
+                lang.team,
                 style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
               ),
 
               const SizedBox(height: 18),
 
-              const Text(
-                'Amneh  •  Tuleen  •  Noor',
+              Text(
+                "${lang.Amneh} • ${lang.Tuleen} • ${lang.Noor}",
                 style: TextStyle(fontSize: 14, color: Colors.black54),
               ),
 
@@ -240,7 +233,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 color: Colors.white,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
+                  children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -259,15 +252,15 @@ class _DashboardPageState extends State<DashboardPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        Text('Home'),
-                        Text('Services'),
-                        Text('How It Works'),
-                        Text('Contact'),
+                        Text(lang.footerHome),
+                        Text(lang.footerServices),
+                        Text(lang.footerHowItWorks),
+                        Text(lang.footerContact),
                       ],
                     ),
-                    SizedBox(height: 24),
+                    const SizedBox(height: 24),
                     Text(
-                      '© 2026 All Rights Reserved',
+                      lang.footerRights,
                       style: TextStyle(color: Colors.black54),
                     ),
                   ],

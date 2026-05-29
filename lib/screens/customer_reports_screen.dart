@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 class CustomerReportsScreen extends StatelessWidget {
   const CustomerReportsScreen({super.key});
@@ -8,6 +10,7 @@ class CustomerReportsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context, listen: false);
     return Scaffold(
       backgroundColor: const Color(0xffF5F5F5),
 
@@ -16,17 +19,14 @@ class CustomerReportsScreen extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           children: [
             /// TITLE
-            const Text(
-              "Customer Reports",
+            Text(
+              lang.customerReports,
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 6),
 
-            const Text(
-              "Review customer complaints submitted by technicians.",
-              style: TextStyle(color: Colors.grey),
-            ),
+            Text(lang.reviewCustomer, style: TextStyle(color: Colors.grey)),
 
             const SizedBox(height: 25),
 
@@ -52,9 +52,9 @@ class CustomerReportsScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(28),
                     ),
 
-                    child: const Center(
+                    child: Center(
                       child: Text(
-                        "No customer reports",
+                        lang.noCustomerReports,
                         style: TextStyle(color: Colors.grey),
                       ),
                     ),
@@ -73,15 +73,15 @@ class CustomerReportsScreen extends StatelessWidget {
 
                       customerId: data['customerId'] ?? '',
 
-                      customerName: data['customerName'] ?? 'Customer',
+                      customerName: data['customerName'] ?? lang.customer,
 
-                      customerPhone: data['customerPhone'] ?? 'No phone',
+                      customerPhone: data['customerPhone'] ?? lang.noPhone,
 
-                      technicianName: data['technicianName'] ?? 'Technician',
+                      technicianName: data['technicianName'] ?? lang.technician,
 
-                      reason: data['reason'] ?? 'No reason provided',
+                      reason: data['reason'] ?? lang.noReasonProvided,
 
-                      reportType: data['reportType'] ?? 'General Report',
+                      reportType: data['reportType'] ?? lang.generalReport,
 
                       requestId: data['requestId'] ?? '',
                     );
@@ -107,6 +107,7 @@ class CustomerReportsScreen extends StatelessWidget {
     required String reportType,
     required String requestId,
   }) {
+    final lang = Provider.of<AppLanguage>(context, listen: false);
     return Container(
       margin: const EdgeInsets.only(bottom: 18),
       padding: const EdgeInsets.all(22),
@@ -171,7 +172,7 @@ class CustomerReportsScreen extends StatelessWidget {
 
               const SizedBox(width: 8),
 
-              Expanded(child: Text("Reported by: $technicianName")),
+              Expanded(child: Text(lang.reportedBy(technicianName))),
             ],
           ),
 
@@ -185,7 +186,7 @@ class CustomerReportsScreen extends StatelessWidget {
 
                 const SizedBox(width: 8),
 
-                Expanded(child: Text("Request ID: $requestId")),
+                Expanded(child: Text(lang.requestId(requestId))),
               ],
             ),
 
@@ -238,9 +239,7 @@ class CustomerReportsScreen extends StatelessWidget {
                               .update({'status': 'blocked'});
 
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Customer blocked successfully"),
-                            ),
+                            SnackBar(content: Text(lang.customerBlocked)),
                           );
                         },
 
@@ -254,8 +253,8 @@ class CustomerReportsScreen extends StatelessWidget {
                     ),
                   ),
 
-                  child: const Text(
-                    "Block Customer",
+                  child: Text(
+                    lang.blockCustomerAccess,
 
                     style: TextStyle(color: Colors.white),
                   ),
@@ -273,9 +272,9 @@ class CustomerReportsScreen extends StatelessWidget {
                         .doc(reportId)
                         .update({'status': 'ignored'});
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Report ignored")),
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(lang.reportIgnored)));
                   },
 
                   style: ElevatedButton.styleFrom(
@@ -288,8 +287,8 @@ class CustomerReportsScreen extends StatelessWidget {
                     ),
                   ),
 
-                  child: const Text(
-                    "Ignore",
+                  child: Text(
+                    lang.ignore,
 
                     style: TextStyle(color: Color(0xff0A6C8E)),
                   ),

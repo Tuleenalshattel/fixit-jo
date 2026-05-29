@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 //this pag is for technican
 class SettingsScreen extends StatelessWidget {
@@ -11,13 +13,14 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F7),
 
       body: SafeArea(
         child: Column(
           children: [
-            /// 🔙 HEADER
+            ///  HEADER
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -28,9 +31,9 @@ class SettingsScreen extends StatelessWidget {
                       Navigator.pop(context);
                     },
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      "Settings",
+                      lang.settings,
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -44,7 +47,7 @@ class SettingsScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            /// 👤 PROFILE
+            /// PROFILE
             Stack(
               alignment: Alignment.bottomRight,
               children: [
@@ -74,7 +77,7 @@ class SettingsScreen extends StatelessWidget {
 
             const SizedBox(height: 10),
 
-            /// ✅ الاسم من Firebase
+            /// الاسم من Firebase
             Text(
               name,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -82,20 +85,20 @@ class SettingsScreen extends StatelessWidget {
 
             const SizedBox(height: 5),
 
-            /// ✅ الرقم من Firebase
+            /// الرقم من Firebase
             Text(phone, style: const TextStyle(color: Colors.grey)),
 
             const SizedBox(height: 25),
 
-            /// ⚙️ SETTINGS LIST
+            /// SETTINGS LIST
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
-                  buildItem(Icons.person, "Account Information"),
-                  buildItem(Icons.lock, "Change Password / Security"),
+                  buildItem(Icons.person, lang.accountInformation),
+                  buildItem(Icons.lock, lang.changePassword),
 
-                  /// 🔔 Notifications
+                  ///  Notifications
                   Container(
                     margin: const EdgeInsets.only(bottom: 15),
                     padding: const EdgeInsets.all(15),
@@ -112,8 +115,8 @@ class SettingsScreen extends StatelessWidget {
                             color: Colors.orange,
                           ),
                         ),
-                        const SizedBox(width: 15),
-                        const Expanded(child: Text("Notifications")),
+                        SizedBox(width: 15),
+                        Expanded(child: Text(lang.notifications)),
                         Switch(value: true, onChanged: (value) {}),
                       ],
                     ),
@@ -121,15 +124,15 @@ class SettingsScreen extends StatelessWidget {
 
                   buildItem(
                     Icons.language,
-                    "Language selection",
+                    lang.languageSelection,
                     trailing: "English",
                   ),
-                  buildItem(Icons.help, "Help & Support"),
-                  buildItem(Icons.info, "About the App"),
+                  buildItem(Icons.help, lang.helpSupport),
+                  buildItem(Icons.info, lang.aboutApp),
 
                   const SizedBox(height: 20),
 
-                  /// 🔴 LOGOUT (مهم جدًا)
+                  ///  LOGOUT (مهم جدًا)
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red[100],
@@ -149,8 +152,8 @@ class SettingsScreen extends StatelessWidget {
                         (route) => false,
                       );
                     },
-                    child: const Text(
-                      "LOG OUT",
+                    child: Text(
+                      lang.logout,
                       style: TextStyle(
                         color: Colors.red,
                         fontWeight: FontWeight.bold,
@@ -160,9 +163,9 @@ class SettingsScreen extends StatelessWidget {
 
                   const SizedBox(height: 10),
 
-                  const Center(
+                  Center(
                     child: Text(
-                      "Version 2.4.1 (Build 890)",
+                      "${lang.version} 2.4.1",
                       style: TextStyle(color: Colors.grey),
                     ),
                   ),

@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 class NotificationScreen extends StatelessWidget {
   final String? userId;
@@ -9,16 +11,28 @@ class NotificationScreen extends StatelessWidget {
 
   static const primary = Color(0xFF1565C0);
 
-  String _formatTime(Timestamp? timestamp) {
+  String _formatTime(Timestamp? timestamp, AppLanguage lang) {
     if (timestamp == null) return '';
     final now = DateTime.now();
     final date = timestamp.toDate();
     final diff = now.difference(date);
 
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${date.day}/${date.month}/${date.year}';
+    if (diff.inMinutes < 1) {
+      return lang.isArabic ? 'الآن' : 'Just now';
+    }
+    if (diff.inMinutes < 60) {
+      return lang.isArabic
+          ? 'منذ ${diff.inMinutes} دقيقة'
+          : '${diff.inMinutes} min ago';
+    }
+    if (diff.inHours < 24) {
+      return lang.isArabic
+          ? 'منذ ${diff.inHours} ساعة'
+          : '${diff.inHours}h ago';
+    }
+    return lang.isArabic
+        ? '${date.day}/${date.month}/${date.year}'
+        : '${date.day}/${date.month}/${date.year}';
   }
 
   IconData _getIcon(String? type) {
@@ -55,6 +69,7 @@ class NotificationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
     final targetUserId = userId ?? currentUser?.uid;
+    final lang = Provider.of<AppLanguage>(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -62,8 +77,8 @@ class NotificationScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: primary),
-        title: const Text(
-          'Notifications',
+        title: Text(
+          lang.notifications,
           style: TextStyle(color: primary, fontWeight: FontWeight.bold),
         ),
         actions: [
@@ -85,15 +100,12 @@ class NotificationScreen extends StatelessWidget {
 
                     await batch.commit();
                   },
-            child: const Text(
-              'Mark all as read',
-              style: TextStyle(color: primary),
-            ),
+            child: Text(lang.markAllRead, style: TextStyle(color: primary)),
           ),
         ],
       ),
       body: targetUserId == null
-          ? const Center(child: Text('User not logged in'))
+          ? Center(child: Text(lang.userNotLoggedIn))
           : StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('notifications')
@@ -105,9 +117,9 @@ class NotificationScreen extends StatelessWidget {
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
-                      'No notifications yet',
+                      lang.noNotificationsYet,
                       style: TextStyle(color: Colors.grey),
                     ),
                   );
@@ -196,7 +208,7 @@ class NotificationScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                _formatTime(createdAt),
+                                _formatTime(createdAt, lang),
                                 style: const TextStyle(
                                   fontSize: 11,
                                   color: Colors.grey,

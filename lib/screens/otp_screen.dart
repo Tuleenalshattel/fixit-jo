@@ -8,6 +8,8 @@ import 'technician_home_screen.dart';
 import 'admin_screen.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 class OtpScreen extends StatefulWidget {
   final String verificationId;
@@ -64,12 +66,14 @@ class _OtpScreenState extends State<OtpScreen> {
   String getOtp() => controllers.map((c) => c.text).join();
 
   Future<void> verifyOtp() async {
+    final lang = Provider.of<AppLanguage>(context, listen: false);
+
     final otp = getOtp();
 
     if (otp.length < 6) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Enter 6-digit code")));
+      ).showSnackBar(SnackBar(content: Text(lang.enter6DigitCode)));
       return;
     }
 
@@ -158,13 +162,9 @@ class _OtpScreenState extends State<OtpScreen> {
           (route) => false,
         );
       } else if (role == 'technician') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Registration submitted. Waiting for admin approval.",
-            ),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(lang.adminapproval)));
 
         Navigator.pushAndRemoveUntil(
           context,
@@ -183,7 +183,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Invalid OTP")));
+      ).showSnackBar(SnackBar(content: Text(lang.invalidOtp)));
     }
   }
 
@@ -197,6 +197,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context);
     const boxSize = 45.0;
 
     return Scaffold(
@@ -206,7 +207,7 @@ class _OtpScreenState extends State<OtpScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: const BackButton(color: Colors.black),
-        title: const Text("OTP Verification"),
+        title: Text(lang.OTPverification),
         centerTitle: true,
       ),
 
@@ -219,7 +220,7 @@ class _OtpScreenState extends State<OtpScreen> {
               const SizedBox(height: 20),
 
               Text(
-                "Enter code sent to ${widget.phoneNumber}",
+                lang.enterCodeSentTo(widget.phoneNumber),
                 textAlign: TextAlign.center,
               ),
 
@@ -252,7 +253,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
               const SizedBox(height: 20),
 
-              Text("Resend in $seconds s"),
+              Text(lang.resendIn(seconds)),
 
               const SizedBox(height: 40),
 
@@ -263,7 +264,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   onPressed: _isLoading ? null : verifyOtp,
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Verify"),
+                      : Text(lang.verify),
                 ),
               ),
             ],

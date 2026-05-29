@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 class TechniciansByProfessionScreen extends StatelessWidget {
   final String professionName;
@@ -13,6 +15,7 @@ class TechniciansByProfessionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context, listen: false);
     return Scaffold(
       backgroundColor: const Color(0xffF7F7F7),
       body: SafeArea(
@@ -32,7 +35,7 @@ class TechniciansByProfessionScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "$professionName Technicians",
+                    lang.techniciansIn(professionName),
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w500,
@@ -45,8 +48,8 @@ class TechniciansByProfessionScreen extends StatelessWidget {
 
             const SizedBox(height: 30),
 
-            const Text(
-              "MANAGEMENT PORTAL",
+            Text(
+              lang.managementPortal,
               style: TextStyle(
                 fontSize: 14,
                 letterSpacing: 2,
@@ -58,15 +61,13 @@ class TechniciansByProfessionScreen extends StatelessWidget {
             const SizedBox(height: 10),
 
             Text(
-              "$professionName Experts",
+              lang.expertsIn(professionName),
               style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 16),
 
-            Text(
-              "Manage and monitor $professionName service quality. Review technician performance and handle feedback.",
-            ),
+            Text(lang.manageServiceQuality),
 
             const SizedBox(height: 24),
 
@@ -81,9 +82,9 @@ class TechniciansByProfessionScreen extends StatelessWidget {
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
-                      "No technicians found",
+                      lang.noTechnicianFound,
                       style: TextStyle(color: Colors.grey),
                     ),
                   );
@@ -97,12 +98,13 @@ class TechniciansByProfessionScreen extends StatelessWidget {
                       context: context,
                       techId: doc.id,
                       imageUrl: data['imageUrl']?.toString() ?? '',
-                      name: data['name']?.toString() ?? 'Technician',
+                      name: data['name']?.toString() ?? lang.technician,
                       phone: data['phone']?.toString() ?? '',
                       rating:
                           ((data['ratingAverage'] as num?)?.toDouble() ?? 0.0)
                               .toStringAsFixed(1),
-                      jobs: "${(data['jobsDone'] as num?)?.toInt() ?? 0} jobs",
+                      jobs:
+                          "${(data['jobsDone'] as num?)?.toInt() ?? 0} ${lang.jobs}",
                       isBlocked: data['isBlocked'] == true,
                     );
                   }).toList(),
@@ -127,6 +129,7 @@ class TechniciansByProfessionScreen extends StatelessWidget {
     required String jobs,
     required bool isBlocked,
   }) {
+    final lang = Provider.of<AppLanguage>(context, listen: false);
     final double ratingValue = double.tryParse(rating) ?? 0.0;
     final bool alert = ratingValue > 0 && ratingValue < 3.5;
 
@@ -201,7 +204,7 @@ class TechniciansByProfessionScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        alert ? "LOW RATING ALERT" : "ACTIVE TECHNICIAN",
+                        alert ? lang.lowRatingAlert : lang.activeTechnician,
                       ),
                     ),
                   ],
@@ -220,9 +223,7 @@ class TechniciansByProfessionScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(30),
             ),
             child: Text(
-              alert
-                  ? "This technician has a low rating. Admin can review performance and decide whether to block the account."
-                  : "Technician performance is currently acceptable.",
+              alert ? lang.lowRatingDescription : lang.acceptablePerformance,
               style: TextStyle(color: alert ? Colors.red : Colors.black87),
             ),
           ),
@@ -248,7 +249,7 @@ class TechniciansByProfessionScreen extends StatelessWidget {
               ),
               child: Center(
                 child: Text(
-                  isBlocked ? "Unblock Technician" : "Block Technician",
+                  isBlocked ? lang.unblockTechnician : lang.blockTechnician,
                   style: TextStyle(
                     color: isBlocked ? Colors.white : Colors.red,
                     fontWeight: FontWeight.bold,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 class RatingScreen extends StatefulWidget {
   final String requestId;
@@ -47,6 +49,7 @@ class _RatingScreenState extends State<RatingScreen> {
   }
 
   Future<void> submitRating() async {
+    final lang = Provider.of<AppLanguage>(context, listen: false);
     await FirebaseFirestore.instance
         .collection('service_requests')
         .doc(widget.requestId)
@@ -61,9 +64,9 @@ class _RatingScreenState extends State<RatingScreen> {
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Rating submitted successfully")),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(lang.ratingSubmitted)));
 
     Navigator.pop(context);
   }
@@ -98,6 +101,7 @@ class _RatingScreenState extends State<RatingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context);
     const Color primaryColor = Color(0xFF0D7EA5);
     const Color lightBlue = Color(0xFFDDF2F8);
     const Color pageBackground = Color(0xFFEAEAEA);
@@ -148,8 +152,8 @@ class _RatingScreenState extends State<RatingScreen> {
                                 ),
                               ),
                               const SizedBox(width: 18),
-                              const Text(
-                                "Rate Your Experience",
+                              Text(
+                                lang.rateYourExperience,
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
@@ -221,8 +225,8 @@ class _RatingScreenState extends State<RatingScreen> {
 
                               const SizedBox(height: 4),
 
-                              const Text(
-                                "Service Professional",
+                              Text(
+                                lang.serviceProfessional,
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: textGrey,
@@ -246,8 +250,8 @@ class _RatingScreenState extends State<RatingScreen> {
                             ),
                             child: Column(
                               children: [
-                                const Text(
-                                  "How was the service?",
+                                Text(
+                                  lang.howWasService,
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
@@ -277,8 +281,8 @@ class _RatingScreenState extends State<RatingScreen> {
                                   }),
                                 ),
                                 const SizedBox(height: 18),
-                                const Text(
-                                  "Tap a star to rate",
+                                Text(
+                                  lang.tapStar,
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Color(0xFFACB1B8),
@@ -291,10 +295,12 @@ class _RatingScreenState extends State<RatingScreen> {
 
                           const SizedBox(height: 22),
 
-                          const Align(
-                            alignment: Alignment.centerLeft,
+                          Align(
+                            alignment: lang.isArabic
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
                             child: Text(
-                              "Your Feedback",
+                              lang.yourFeedback,
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -314,8 +320,9 @@ class _RatingScreenState extends State<RatingScreen> {
                               controller: feedbackController,
                               maxLines: 5,
                               decoration: InputDecoration(
-                                hintText:
-                                    "Share your experience with ${widget.technicianName}...",
+                                hintText: lang.shareExperience(
+                                  widget.technicianName,
+                                ),
                                 hintStyle: const TextStyle(
                                   color: Color(0xFFB0B0B0),
                                   fontSize: 13,
@@ -354,7 +361,7 @@ class _RatingScreenState extends State<RatingScreen> {
                                     ),
                                   ),
                                   child: Text(
-                                    tag,
+                                    lang.translateTag(tag),
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
@@ -382,8 +389,8 @@ class _RatingScreenState extends State<RatingScreen> {
                                   borderRadius: BorderRadius.circular(30),
                                 ),
                               ),
-                              child: const Text(
-                                "Submit Rating",
+                              child: Text(
+                                lang.submitRating,
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,

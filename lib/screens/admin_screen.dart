@@ -4,6 +4,8 @@ import 'customer_reports_screen.dart';
 import 'profession_screen.dart';
 import 'settings_screen.dart';
 import 'notification_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -24,6 +26,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context);
     return Scaffold(
       backgroundColor: const Color(0xffF5F5F5),
       body: pages[currentIndex],
@@ -42,25 +45,25 @@ class _AdminScreenState extends State<AdminScreen> {
           children: [
             BottomItem(
               icon: Icons.home,
-              title: "Home",
+              title: lang.home,
               active: currentIndex == 0,
               onTap: () => setState(() => currentIndex = 0),
             ),
             BottomItem(
               icon: Icons.assessment_outlined,
-              title: "Report",
+              title: lang.report,
               active: currentIndex == 1,
               onTap: () => setState(() => currentIndex = 1),
             ),
             BottomItem(
               icon: Icons.handyman_outlined,
-              title: "Professions",
+              title: lang.professions,
               active: currentIndex == 2,
               onTap: () => setState(() => currentIndex = 2),
             ),
             BottomItem(
               icon: Icons.settings_outlined,
-              title: "Settings",
+              title: lang.settings,
               active: currentIndex == 3,
               onTap: () => setState(() => currentIndex = 3),
             ),
@@ -99,6 +102,7 @@ class HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context);
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(18),
@@ -187,15 +191,15 @@ class HomeContent extends StatelessWidget {
 
           const SizedBox(height: 28),
 
-          const Text(
-            "System Overview",
+          Text(
+            lang.systemOverview,
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
 
           const SizedBox(height: 5),
 
           Text(
-            "Platform health and operational status.",
+            lang.platformHealth,
             style: TextStyle(color: Colors.grey.shade600, fontSize: 15),
           ),
 
@@ -206,7 +210,7 @@ class HomeContent extends StatelessWidget {
             builder: (context, snapshot) {
               return overviewCard(
                 color: const Color(0xff46B7F1),
-                title: "TOTAL TECHNICIANS",
+                title: lang.totaltechnicians,
                 value: "${snapshot.data ?? 0}",
                 icon: Icons.engineering,
               );
@@ -220,9 +224,9 @@ class HomeContent extends StatelessWidget {
             builder: (context, snapshot) {
               return overviewCard(
                 color: Colors.white,
-                title: "ACTIVE REQUESTS",
+                title: lang.activeRequest,
                 value: "${snapshot.data ?? 0}",
-                subtitle: "Live service requests",
+                subtitle: lang.liveServiceRequests,
                 darkText: true,
               );
             },
@@ -242,8 +246,8 @@ class HomeContent extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "PENDING VERIFICATIONS",
+                    Text(
+                      lang.pendingVerificationsTitle,
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 12),
@@ -264,8 +268,8 @@ class HomeContent extends StatelessWidget {
                         color: const Color(0xff5C3A16),
                         borderRadius: BorderRadius.circular(30),
                       ),
-                      child: const Text(
-                        "REVIEW QUEUE",
+                      child: Text(
+                        lang.reviewQueue,
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -286,9 +290,9 @@ class HomeContent extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      "Pending Verifications",
+                      lang.pendingVerifications,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
@@ -296,7 +300,7 @@ class HomeContent extends StatelessWidget {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      "Profiles requiring administrative approval.",
+                      lang.profilesRequireApproval,
                       style: TextStyle(color: Colors.grey),
                     ),
                   ],
@@ -304,7 +308,7 @@ class HomeContent extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () {},
-                child: const Text("View All", style: TextStyle(fontSize: 13)),
+                child: Text(lang.viewAll, style: TextStyle(fontSize: 13)),
               ),
             ],
           ),
@@ -322,8 +326,8 @@ class HomeContent extends StatelessWidget {
               }
 
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return const Text(
-                  "No pending technicians",
+                return Text(
+                  lang.noPendingTechnicians,
                   style: TextStyle(color: Colors.grey),
                 );
               }
@@ -341,7 +345,8 @@ class HomeContent extends StatelessWidget {
                         ? (data['specializations'] as List).join(", ")
                         : 'Technician',
                     phone: data['phone']?.toString() ?? '',
-                    tags: const ["PENDING APPROVAL"],
+                    tags: [lang.pendingApproval],
+                    lang: lang,
                   );
                 }).toList(),
               );
@@ -350,17 +355,14 @@ class HomeContent extends StatelessWidget {
 
           const SizedBox(height: 28),
 
-          const Text(
-            "Active Service Requests",
+          Text(
+            lang.activeServiceRequests,
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
           ),
 
           const SizedBox(height: 6),
 
-          const Text(
-            "Live job tracking and service overview.",
-            style: TextStyle(color: Colors.grey),
-          ),
+          Text(lang.livejob, style: TextStyle(color: Colors.grey)),
 
           const SizedBox(height: 18),
 
@@ -371,8 +373,8 @@ class HomeContent extends StatelessWidget {
                 .snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return const Text(
-                  "No active service requests",
+                return Text(
+                  lang.noActiveRequests,
                   style: TextStyle(color: Colors.grey),
                 );
               }
@@ -383,11 +385,12 @@ class HomeContent extends StatelessWidget {
 
                   return requestTile(
                     initials: getInitials(data['customerName'] ?? 'Customer'),
-                    name: data['customerName']?.toString() ?? 'Customer',
+                    name: data['customerName']?.toString() ?? lang.customer,
+
                     service:
-                        "${data['category'] ?? 'Service'} • ${doc.id.substring(0, 5)}",
+                        "${lang.translateService(data['category'] ?? 'Service')} • ${doc.id.substring(0, 5)}",
                     technician:
-                        data['technicianName']?.toString() ?? 'Not assigned',
+                        data['technicianName']?.toString() ?? lang.notAssigned,
                   );
                 }).toList(),
               );
@@ -473,6 +476,7 @@ Widget personCard({
   required String job,
   required String phone,
   required List<String> tags,
+  required AppLanguage lang,
 }) {
   return Container(
     margin: const EdgeInsets.only(bottom: 18),
@@ -540,7 +544,7 @@ Widget personCard({
                       });
 
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Technician verified")),
+                    SnackBar(content: Text(lang.technicianverified)),
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -549,10 +553,7 @@ Widget personCard({
                     borderRadius: BorderRadius.circular(25),
                   ),
                 ),
-                child: const Text(
-                  "Verify",
-                  style: TextStyle(color: Colors.white),
-                ),
+                child: Text(lang.verify, style: TextStyle(color: Colors.white)),
               ),
             ),
             const SizedBox(width: 10),
@@ -569,7 +570,7 @@ Widget personCard({
                       });
 
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Technician rejected")),
+                    SnackBar(content: Text(lang.technicianRejected)),
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -578,10 +579,7 @@ Widget personCard({
                     borderRadius: BorderRadius.circular(25),
                   ),
                 ),
-                child: const Text(
-                  "Reject",
-                  style: TextStyle(color: Colors.red),
-                ),
+                child: Text(lang.reject, style: TextStyle(color: Colors.red)),
               ),
             ),
           ],

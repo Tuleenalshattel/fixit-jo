@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'home_screen.dart';
 import 'technician_home_screen.dart';
 import 'admin_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 class LoginOtpScreen extends StatefulWidget {
   final String verificationId;
@@ -23,6 +25,7 @@ class LoginOtpScreen extends StatefulWidget {
 class _LoginOtpScreenState extends State<LoginOtpScreen> {
   String currentVerificationId = "";
   Future<void> resendCode() async {
+    final lang = Provider.of<AppLanguage>(context, listen: false);
     setState(() {
       seconds = 30;
     });
@@ -36,7 +39,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
 
       verificationFailed: (FirebaseAuthException e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? "Verification failed")),
+          SnackBar(content: Text(e.message ?? lang.verificationfailed)),
         );
       },
 
@@ -45,7 +48,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
 
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text("Code resent")));
+        ).showSnackBar(SnackBar(content: Text(lang.Coderesent)));
       },
 
       codeAutoRetrievalTimeout: (String verificationId) {
@@ -85,12 +88,14 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
   String getOtp() => controllers.map((c) => c.text).join();
 
   Future<void> verifyOtp() async {
+    final lang = Provider.of<AppLanguage>(context, listen: false);
+
     final otp = getOtp();
 
     if (otp.length < 6) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Enter 6-digit code")));
+      ).showSnackBar(SnackBar(content: Text(lang.enter6DigitCode)));
       return;
     }
 
@@ -112,7 +117,18 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
           .collection('users')
           .doc(uid)
           .get();
+      if (userDoc.data()?['isBlocked'] == true) {
+        await FirebaseAuth.instance.signOut();
 
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(lang.accountBlocked)));
+
+        setState(() => _isLoading = false);
+        return;
+      }
       final role = userDoc.data()?['role'] ?? 'customer';
 
       if (!mounted) return;
@@ -130,14 +146,25 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
             .doc(uid)
             .get();
 
+        if (techDoc.data()?['isBlocked'] == true) {
+          await FirebaseAuth.instance.signOut();
+
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(lang.accountBlocked)));
+
+          setState(() => _isLoading = false);
+          return;
+        }
+
         final isVerified = techDoc.data()?['isVerified'] == true;
 
         if (!isVerified) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Your account is pending admin approval"),
-            ),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(lang.pendingadminapproval)));
           return;
         }
 
@@ -158,7 +185,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Invalid OTP")));
+      ).showSnackBar(SnackBar(content: Text(lang.invalidOtp)));
     }
   }
 
@@ -172,6 +199,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context);
     const boxSize = 45.0;
 
     return Scaffold(
@@ -180,7 +208,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: const BackButton(color: Colors.black),
-        title: const Text("OTP Verification"),
+        title: Text(lang.OTPverification),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -191,7 +219,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
               const SizedBox(height: 20),
 
               Text(
-                "Enter code sent to ${widget.phoneNumber}",
+                lang.enterCodeSentTo(widget.phoneNumber),
                 textAlign: TextAlign.center,
               ),
 
@@ -224,10 +252,10 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
               const SizedBox(height: 20),
 
               seconds > 0
-                  ? Text("Resend in $seconds s")
+                  ? Text(lang.resendIn(seconds))
                   : TextButton(
                       onPressed: resendCode,
-                      child: const Text("Resend Code"),
+                      child: Text(lang.resendcode),
                     ),
 
               const SizedBox(height: 40),
@@ -239,7 +267,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
                   onPressed: _isLoading ? null : verifyOtp,
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Verify"),
+                      : Text(lang.verify),
                 ),
               ),
             ],

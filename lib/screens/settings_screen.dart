@@ -2,6 +2,8 @@ import 'package:fixitjo_app/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -26,6 +28,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context, listen: false);
     return Scaffold(
       backgroundColor: const Color(0xffF8F8F8),
 
@@ -43,8 +46,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(width: 15),
 
                     Text(
-                      "Admin Settings",
-
+                      lang.adminSettings,
                       style: const TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
@@ -91,7 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                             Text(
                               FirebaseAuth.instance.currentUser?.phoneNumber ??
-                                  "No Phone",
+                                  lang.noPhone,
                               style: TextStyle(
                                 color: Colors.grey.shade700,
                                 fontSize: 18,
@@ -111,8 +113,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 borderRadius: BorderRadius.circular(20),
                               ),
 
-                              child: const Text(
-                                "Super Admin",
+                              child: Text(
+                                lang.superAdmin,
                                 style: TextStyle(
                                   color: Color(0xff156D8A),
                                   fontWeight: FontWeight.bold,
@@ -129,7 +131,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 35),
 
                 /// ACCOUNT SETTINGS
-                sectionTitle("ACCOUNT SETTINGS"),
+                sectionTitle(lang.accountSettings),
 
                 const SizedBox(height: 15),
 
@@ -137,12 +139,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     settingTile(
                       icon: Icons.person_outline,
-                      title: "Account Information",
+                      title: lang.accountInformation,
                     ),
 
                     settingTile(
                       icon: Icons.lock_outline,
-                      title: "Security & Password",
+                      title: lang.securityAndPassword,
                     ),
                   ],
                 ),
@@ -150,7 +152,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 30),
 
                 /// PREFERENCES
-                sectionTitle("PREFERENCES"),
+                sectionTitle(lang.preferences),
 
                 const SizedBox(height: 15),
 
@@ -163,9 +165,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                         const SizedBox(width: 15),
 
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            "Notifications",
+                            lang.notifications,
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
@@ -186,8 +188,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               SnackBar(
                                 content: Text(
                                   value
-                                      ? "Notifications Enabled"
-                                      : "Notifications Disabled",
+                                      ? lang.notificationsEnabled
+                                      : lang.notificationsDisabled,
                                 ),
                               ),
                             );
@@ -205,9 +207,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                         const SizedBox(width: 15),
 
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            "Language",
+                            lang.language,
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
@@ -238,7 +240,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 30),
 
                 /// SUPPORT
-                sectionTitle("SUPPORT & LEGAL"),
+                sectionTitle(lang.supportLegal),
 
                 const SizedBox(height: 15),
 
@@ -246,13 +248,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     settingTile(
                       icon: Icons.help_outline,
-                      title: "Help & Support",
+                      title: lang.helpSupport,
                     ),
 
-                    settingTile(
-                      icon: Icons.info_outline,
-                      title: "About the App",
-                    ),
+                    settingTile(icon: Icons.info_outline, title: lang.aboutApp),
                   ],
                 ),
 
@@ -271,7 +270,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       borderRadius: BorderRadius.circular(22),
                     ),
 
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.logout, color: Colors.red),
@@ -279,7 +278,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         SizedBox(width: 10),
 
                         Text(
-                          "LOG OUT",
+                          lang.logOut,
                           style: TextStyle(
                             color: Colors.red,
                             fontWeight: FontWeight.bold,
@@ -295,7 +294,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 Center(
                   child: Text(
-                    "FIXIT JO ADMIN V2.4.0",
+                    " ",
                     style: TextStyle(
                       color: Colors.grey.shade500,
                       letterSpacing: 1,

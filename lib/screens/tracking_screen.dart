@@ -5,6 +5,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 class TrackingScreen extends StatefulWidget {
   final String requestId;
@@ -36,6 +38,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     super.initState();
     _getMyLocation();
     _listenToRequest();
+
     if (widget.isTechnician) {
       _locationTimer = Timer.periodic(const Duration(seconds: 5), (_) {
         _updateMyLocationToFirestore();
@@ -51,12 +54,15 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
   Future<void> _getMyLocation() async {
     LocationPermission permission = await Geolocator.checkPermission();
+
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
+
     if (permission == LocationPermission.deniedForever) return;
 
     final position = await Geolocator.getCurrentPosition();
+
     setState(() {
       _myLocation = LatLng(position.latitude, position.longitude);
       _isLoading = false;
@@ -86,6 +92,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
         });
   }
 
+  //Observe Pattern
   void _listenToRequest() {
     FirebaseFirestore.instance
         .collection('service_requests')
@@ -93,6 +100,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
         .snapshots()
         .listen((doc) async {
           if (!doc.exists) return;
+
           final data = doc.data()!;
 
           setState(() {
@@ -102,7 +110,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
           if (widget.isTechnician) {
             final double lat = (data['latitude'] as num?)?.toDouble() ?? 0.0;
             final double lng = (data['longitude'] as num?)?.toDouble() ?? 0.0;
-            final String customerName = data['customerName'] ?? 'Customer';
+            final String customerName = data['customerName'] ?? '';
 
             setState(() {
               _otherLocation = LatLng(lat, lng);
@@ -118,6 +126,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 .get();
 
             if (!techDoc.exists) return;
+
             final techData = techDoc.data()!;
 
             final double lat =
@@ -127,24 +136,26 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
             setState(() {
               _otherLocation = LatLng(lat, lng);
-              _otherName = techData['name'] ?? 'Technician';
+              _otherName = techData['name'] ?? '';
             });
           }
         });
   }
 
-  String _getStatusText() {
+  String _getStatusText(AppLanguage lang) {
     switch (_status) {
       case 'accepted':
         return widget.isTechnician
-            ? 'Head to customer'
-            : 'Technician on the way';
+            ? lang.headToCustomer
+            : lang.technicianOnTheWay;
       case 'arrived':
-        return widget.isTechnician ? 'You have arrived' : 'Technician arrived';
+        return widget.isTechnician
+            ? lang.youHaveArrived
+            : lang.technicianArrived;
       case 'completed':
-        return 'Job Completed ✓';
+        return lang.jobCompleted;
       default:
-        return 'Tracking...';
+        return lang.tracking;
     }
   }
 
@@ -166,6 +177,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
     required String customerId,
     required String customerName,
   }) {
+    final lang = Provider.of<AppLanguage>(context, listen: false);
+
     String selectedType = "Unpaid Service";
     final reasonController = TextEditingController();
 
@@ -173,41 +186,43 @@ class _TrackingScreenState extends State<TrackingScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Report Customer"),
+          title: Text(lang.reportCustomer),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
                 value: selectedType,
-                items: const [
+                items: [
                   DropdownMenuItem(
                     value: "Unpaid Service",
-                    child: Text("Unpaid Service"),
+                    child: Text(lang.unpaidService),
                   ),
                   DropdownMenuItem(
                     value: "Abusive Behavior",
-                    child: Text("Abusive Behavior"),
+                    child: Text(lang.abusiveBehavior),
                   ),
                   DropdownMenuItem(
                     value: "Fake Request",
-                    child: Text("Fake Request"),
+                    child: Text(lang.fakeRequest),
                   ),
-                  DropdownMenuItem(value: "Other", child: Text("Other")),
+                  DropdownMenuItem(value: "Other", child: Text(lang.other)),
                 ],
-                onChanged: (value) => selectedType = value!,
-                decoration: const InputDecoration(labelText: "Report Type"),
+                onChanged: (value) {
+                  selectedType = value!;
+                },
+                decoration: InputDecoration(labelText: lang.reportType),
               ),
               TextField(
                 controller: reasonController,
                 maxLines: 3,
-                decoration: const InputDecoration(labelText: "Reason"),
+                decoration: InputDecoration(labelText: lang.reason),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+              child: Text(lang.cancel),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -227,13 +242,14 @@ class _TrackingScreenState extends State<TrackingScreen> {
                     });
 
                 if (!context.mounted) return;
+
                 Navigator.pop(context);
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Report submitted to admin")),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(lang.reportSubmitted)));
               },
-              child: const Text("Submit"),
+              child: Text(lang.submit),
             ),
           ],
         );
@@ -243,6 +259,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FA),
       appBar: AppBar(
@@ -264,7 +282,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.isTechnician ? 'Customer Location' : 'Track Technician',
+          widget.isTechnician ? lang.customerLocation : lang.trackTechnician,
           style: const TextStyle(
             color: Colors.black87,
             fontWeight: FontWeight.bold,
@@ -276,7 +294,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
           ? const Center(child: CircularProgressIndicator(color: primary))
           : Column(
               children: [
-                // Status Bar
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
@@ -289,7 +306,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                       Icon(Icons.circle, color: _getStatusColor(), size: 12),
                       const SizedBox(width: 8),
                       Text(
-                        _getStatusText(),
+                        _getStatusText(lang),
                         style: TextStyle(
                           color: _getStatusColor(),
                           fontWeight: FontWeight.bold,
@@ -299,7 +316,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
                   ),
                 ),
 
-                // Map
                 Expanded(
                   child: FlutterMap(
                     mapController: _mapController,
@@ -350,7 +366,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
                                       ],
                                     ),
                                     child: Text(
-                                      _otherName,
+                                      _otherName.isEmpty
+                                          ? lang.loading
+                                          : _otherName,
                                       style: const TextStyle(
                                         fontSize: 9,
                                         fontWeight: FontWeight.bold,
@@ -411,7 +429,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                               children: [
                                 Text(
                                   _otherName.isEmpty
-                                      ? 'Loading...'
+                                      ? lang.loading
                                       : _otherName,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
@@ -420,8 +438,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
                                 ),
                                 Text(
                                   widget.isTechnician
-                                      ? 'Customer'
-                                      : 'Technician',
+                                      ? lang.customer
+                                      : lang.technician,
                                   style: const TextStyle(
                                     color: Colors.black54,
                                     fontSize: 13,
@@ -444,7 +462,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         ],
                       ),
 
-                      // أزرار الفني
                       if (widget.isTechnician) ...[
                         const SizedBox(height: 12),
 
@@ -467,9 +484,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
                                     .doc(widget.requestId)
                                     .update({'status': 'arrived'});
                               },
-                              child: const Text(
-                                'I Arrived',
-                                style: TextStyle(
+                              child: Text(
+                                lang.iArrived,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 15,
                                 ),
@@ -498,7 +515,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
                                     .get();
 
                                 final requestData = requestDoc.data();
-
                                 if (requestData == null) return;
 
                                 final techId = requestData['technicianId'];
@@ -513,7 +529,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
                                           FieldValue.serverTimestamp(),
                                     });
 
-                                // زيادة عدد الجوبات
                                 if (techId != null) {
                                   final techRef = FirebaseFirestore.instance
                                       .collection('technicians')
@@ -531,15 +546,13 @@ class _TrackingScreenState extends State<TrackingScreen> {
                                   }, SetOptions(merge: true));
                                 }
 
-                                // إشعار للزبون
                                 if (customerId != null) {
                                   await FirebaseFirestore.instance
                                       .collection('notifications')
                                       .add({
                                         'userId': customerId,
-                                        'title': 'Service Completed ✅',
-                                        'body':
-                                            'Your service has been completed. Please rate your experience.',
+                                        'title': lang.serviceCompleted,
+                                        'body': lang.serviceCompletedBody,
                                         'type': 'service_completed',
                                         'requestId': widget.requestId,
                                         'isRead': false,
@@ -552,9 +565,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
                                 Navigator.pop(context);
                               },
-                              child: const Text(
-                                'Finish Job',
-                                style: TextStyle(
+                              child: Text(
+                                lang.finishJob,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 15,
                                 ),
@@ -575,17 +588,16 @@ class _TrackingScreenState extends State<TrackingScreen> {
                                     .get();
 
                                 final data = requestDoc.data();
-
                                 if (data == null) return;
 
                                 showReportCustomerDialog(
                                   requestId: widget.requestId,
                                   customerId: data['customerId'] ?? '',
                                   customerName:
-                                      data['customerName'] ?? 'Customer',
+                                      data['customerName'] ?? lang.customer,
                                 );
                               },
-                              child: const Text("Report Customer"),
+                              child: Text(lang.reportCustomer),
                             ),
                           ),
                         ],
@@ -601,10 +613,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.orange),
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Text(
-                              '🔧 Technician has arrived!',
-                              style: TextStyle(
+                              lang.technicianArrived,
+                              style: const TextStyle(
                                 color: Colors.orange,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
@@ -624,10 +636,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.green),
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Text(
-                              '✅ Job Completed!',
-                              style: TextStyle(
+                              lang.jobCompleted,
+                              style: const TextStyle(
                                 color: Colors.green,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,

@@ -8,6 +8,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'rating_screen.dart';
 import 'tracking_screen.dart';
 import 'all_categories.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -45,6 +47,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
 
@@ -63,12 +67,14 @@ class _HomePageState extends State<HomePage> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "WELCOME BACK",
+                Text(
+                  lang.welcomeBackHome,
                   style: TextStyle(fontSize: 10, color: Color(0xFF1E88E5)),
                 ),
                 Text(
-                  "Hello ${customerName.isNotEmpty ? customerName : 'User'}",
+                  lang.helloUser(
+                    customerName.isNotEmpty ? customerName : lang.user,
+                  ),
                   style: const TextStyle(
                     fontSize: 16,
                     color: Color(0xFF1E88E5),
@@ -155,8 +161,8 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Need a fix?",
+                  Text(
+                    lang.needAFix,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -164,8 +170,8 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    "Find the best pros in seconds.",
+                  Text(
+                    lang.findBestPros,
                     style: TextStyle(color: Colors.white70),
                   ),
                   const SizedBox(height: 20),
@@ -180,7 +186,7 @@ class _HomePageState extends State<HomePage> {
                       filled: true,
                       fillColor: Colors.white,
                       prefixIcon: const Icon(Icons.search),
-                      hintText: "Search...",
+                      hintText: lang.searchFor,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
                         borderSide: BorderSide.none,
@@ -196,8 +202,8 @@ class _HomePageState extends State<HomePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "Service Categories",
+                Text(
+                  lang.serviceCategories,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -214,8 +220,8 @@ class _HomePageState extends State<HomePage> {
                       ),
                     );
                   },
-                  child: const Text(
-                    "View all",
+                  child: Text(
+                    lang.viewAll,
                     style: TextStyle(color: Color(0xFF1E88E5)),
                   ),
                 ),
@@ -231,21 +237,29 @@ class _HomePageState extends State<HomePage> {
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
               children: [
-                if ("plumbing".contains(searchText))
+                if ("plumbing ${lang.plumbing}".toLowerCase().contains(
+                  searchText,
+                ))
                   buildCategory(Icons.plumbing, "Plumbing"),
-                if ("electrical".contains(searchText))
+                if ("electrical ${lang.electrical}".toLowerCase().contains(
+                  searchText,
+                ))
                   buildCategory(Icons.electrical_services, "Electrical"),
-                if ("carpentry".contains(searchText))
+                if ("carpentry ${lang.carpentry}".toLowerCase().contains(
+                  searchText,
+                ))
                   buildCategory(Icons.handyman, "Carpentry"),
-                if ("ac repair".contains(searchText))
+                if ("ac repair ${lang.acRepair}".toLowerCase().contains(
+                  searchText,
+                ))
                   buildCategory(Icons.ac_unit, "AC Repair"),
               ],
             ),
 
             const SizedBox(height: 25),
 
-            const Text(
-              "Ongoing Requests",
+            Text(
+              lang.ongoingRequests,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -255,6 +269,7 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 10),
 
+            //Observe Pattern usage
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('service_requests')
@@ -274,8 +289,8 @@ class _HomePageState extends State<HomePage> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Text(
-                      "No ongoing requests",
+                    child: Text(
+                      lang.noOngoingRequests,
                       style: TextStyle(color: Colors.grey),
                     ),
                   );
@@ -307,7 +322,7 @@ class _HomePageState extends State<HomePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              data['category'] ?? '',
+                              lang.translateService(data['category'] ?? ''),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -317,10 +332,10 @@ class _HomePageState extends State<HomePage> {
 
                             Text(
                               status == 'accepted'
-                                  ? "Technician assigned"
+                                  ? lang.technicianAssigned
                                   : status == 'completed'
-                                  ? "Completed"
-                                  : "Waiting...",
+                                  ? lang.complete
+                                  : lang.waitingForTechnician,
                               style: const TextStyle(color: Colors.grey),
                             ),
                             const SizedBox(height: 6),
@@ -355,7 +370,7 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                   );
                                 },
-                                child: const Text("Track"),
+                                child: Text(lang.trackTechnician),
                               ),
                             ],
 
@@ -380,7 +395,7 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                   );
                                 },
-                                child: const Text("Rate Technician"),
+                                child: Text(lang.rateTechnician),
                               ),
                             ],
                           ],
@@ -439,16 +454,20 @@ class _HomePageState extends State<HomePage> {
           }
         },
 
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.add), label: "Request"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: lang.home),
+          BottomNavigationBarItem(icon: Icon(Icons.add), label: lang.request),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: lang.profile,
+          ),
         ],
       ),
     );
   }
 
   Widget buildCategory(IconData icon, String title) {
+    final lang = Provider.of<AppLanguage>(context);
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -471,7 +490,7 @@ class _HomePageState extends State<HomePage> {
               child: Icon(icon, color: Colors.blue),
             ),
             const SizedBox(height: 10),
-            Text(title),
+            Text(lang.translateService(title)),
           ],
         ),
       ),

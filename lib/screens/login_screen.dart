@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import 'login_otp_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
+import '../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,7 +16,11 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController phoneController = TextEditingController();
   bool isSendingOtp = false;
+  String selectedRole = "Customer";
+
+  @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<AppLanguage>(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F7),
       body: SafeArea(
@@ -55,15 +62,15 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 30),
 
-                const Text(
-                  "Welcome back",
+                Text(
+                  lang.welcomeBack,
                   style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 10),
 
-                const Text(
-                  "Enter your mobile number to start fixing.",
+                Text(
+                  lang.enterMobileToStart,
                   style: TextStyle(color: Color(0xFF4F4F4F), fontSize: 15),
                 ),
 
@@ -84,8 +91,52 @@ class _LoginPageState extends State<LoginPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "MOBILE NUMBER",
+                      Text(
+                        lang.accountType,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF2F2F2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: selectedRole,
+                            isExpanded: true,
+                            items: [
+                              DropdownMenuItem(
+                                value: "Customer",
+                                child: Text(lang.customer),
+                              ),
+                              DropdownMenuItem(
+                                value: "Technician",
+                                child: Text(lang.technician),
+                              ),
+                              DropdownMenuItem(
+                                value: "Admin",
+                                child: Text(lang.admin),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              setState(() {
+                                selectedRole = value!;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+                      Text(
+                        lang.mobileNumber,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.black87,
@@ -145,10 +196,8 @@ class _LoginPageState extends State<LoginPage> {
 
                                   if (phone.isEmpty || phone.length < 9) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          "Enter valid phone number",
-                                        ),
+                                      SnackBar(
+                                        content: Text(lang.enterValidPhone),
                                       ),
                                     );
                                     return;
@@ -160,56 +209,31 @@ class _LoginPageState extends State<LoginPage> {
 
                                   String phoneNumber = '+962$phone';
 
-                                  await FirebaseAuth.instance.verifyPhoneNumber(
+                                  // Singleton Pattern Calling
+                                  await AuthService().verifyPhoneNumber(
                                     phoneNumber: phoneNumber,
-                                    verificationCompleted:
-                                        (
-                                          PhoneAuthCredential credential,
-                                        ) async {},
-                                    verificationFailed:
-                                        (FirebaseAuthException e) {
-                                          setState(() {
-                                            isSendingOtp = false;
-                                          });
-
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                e.message ??
-                                                    'Verification failed',
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                    codeSent:
-                                        (
-                                          String verificationId,
-                                          int? resendToken,
-                                        ) {
-                                          setState(() {
-                                            isSendingOtp = false;
-                                          });
-
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  LoginOtpScreen(
-                                                    verificationId:
-                                                        verificationId,
-                                                    phoneNumber: phoneNumber,
-                                                  ),
-                                            ),
-                                          );
-                                        },
-                                    codeAutoRetrievalTimeout:
-                                        (String verificationId) {
-                                          setState(() {
-                                            isSendingOtp = false;
-                                          });
-                                        },
+                                    onCodeSent: (verificationId) {
+                                      setState(() {
+                                        isSendingOtp = false;
+                                      });
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => LoginOtpScreen(
+                                            verificationId: verificationId,
+                                            phoneNumber: phoneNumber,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    onError: (error) {
+                                      setState(() => isSendingOtp = false);
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(content: Text(error)),
+                                      );
+                                    },
                                   );
                                 },
                           style: ElevatedButton.styleFrom(
@@ -228,11 +252,11 @@ class _LoginPageState extends State<LoginPage> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Row(
+                              : Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      "Send OTP",
+                                      lang.sendOTP,
                                       style: TextStyle(
                                         fontSize: 16,
                                         color: Color(0xFF2F80ED),
@@ -256,7 +280,7 @@ class _LoginPageState extends State<LoginPage> {
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 10),
                             child: Text(
-                              "SECURE LOGIN",
+                              lang.secureLogin,
                               style: TextStyle(color: Colors.grey),
                             ),
                           ),
@@ -272,7 +296,7 @@ class _LoginPageState extends State<LoginPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Don't have an account? "),
+                    Text(lang.dontHaveAccount),
                     GestureDetector(
                       onTap: () {
                         Navigator.push(
@@ -282,8 +306,8 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         );
                       },
-                      child: const Text(
-                        "Register",
+                      child: Text(
+                        lang.register,
                         style: TextStyle(
                           color: Color(0xFF2F80ED),
                           fontWeight: FontWeight.bold,
@@ -295,8 +319,8 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 30),
 
-                const Text(
-                  "By continuing, you agree to FixIt Jo's Terms of Service and Privacy Policy.",
+                Text(
+                  lang.termsAndPrivacy,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),

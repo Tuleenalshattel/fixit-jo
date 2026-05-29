@@ -1,21 +1,22 @@
-import 'package:fixitjo_app/screens/map_screen.dart';
-import 'package:fixitjo_app/screens/request_service_screen.dart';
-import 'package:fixitjo_app/screens/settings_customer.dart';
 import 'package:fixitjo_app/screens/splash_screen.dart';
-import 'package:fixitjo_app/screens/technician_home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'screens/chatbot_screen.dart';
-import 'screens/notification_screen.dart';
-import 'screens/settings_customer.dart';
+import 'package:provider/provider.dart';
+import 'package:fixitjo_app/services/app_language.dart';
+import 'package:fixitjo_app/screens/dashboard_page.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   Gemini.init(apiKey: 'AIzaSyBL95VJKxe_IbB_YFQC84VRVW4FhYNNGrk');
-  runApp(const MyApp());
+
+  runApp(
+    ChangeNotifierProvider(create: (_) => AppLanguage(), child: const MyApp()),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -23,11 +24,34 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'FixItJo',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const SplashScreen(),
+    return Consumer<AppLanguage>(
+      builder: (context, lang, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'FixItJo',
+
+          locale: lang.locale,
+
+          supportedLocales: const [Locale('en'), Locale('ar')],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          builder: (context, child) {
+            return Directionality(
+              textDirection: lang.isArabic
+                  ? TextDirection.rtl
+                  : TextDirection.ltr,
+              child: child!,
+            );
+          },
+
+          theme: ThemeData(primarySwatch: Colors.blue),
+
+          home: const DashboardPage(),
+        );
+      },
     );
   }
 }
