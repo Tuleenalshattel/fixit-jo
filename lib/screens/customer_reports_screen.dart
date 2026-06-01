@@ -61,7 +61,20 @@ class CustomerReportsScreen extends StatelessWidget {
                   );
                 }
 
-                final reports = snapshot.data!.docs;
+                final reports = snapshot.data!.docs.toList();
+
+                reports.sort((a, b) {
+                  final aTime =
+                      (a.data() as Map<String, dynamic>)['createdAt']
+                          as Timestamp?;
+                  final bTime =
+                      (b.data() as Map<String, dynamic>)['createdAt']
+                          as Timestamp?;
+
+                  if (aTime == null || bTime == null) return 0;
+
+                  return bTime.compareTo(aTime);
+                });
 
                 return Column(
                   children: reports.map((doc) {
@@ -78,6 +91,8 @@ class CustomerReportsScreen extends StatelessWidget {
                       customerPhone: data['customerPhone'] ?? lang.noPhone,
 
                       technicianName: data['technicianName'] ?? lang.technician,
+
+                      technicianPhone: data['technicianPhone'] ?? lang.noPhone,
 
                       reason: data['reason'] ?? lang.noReasonProvided,
 
@@ -103,6 +118,7 @@ class CustomerReportsScreen extends StatelessWidget {
     required String customerName,
     required String customerPhone,
     required String technicianName,
+    required String technicianPhone,
     required String reason,
     required String reportType,
     required String requestId,
@@ -131,7 +147,7 @@ class CustomerReportsScreen extends StatelessWidget {
             ),
 
             child: Text(
-              reportType.toUpperCase(),
+              lang.translateReportType(reportType).toUpperCase(),
 
               style: const TextStyle(
                 color: Colors.red,
@@ -175,7 +191,15 @@ class CustomerReportsScreen extends StatelessWidget {
               Expanded(child: Text(lang.reportedBy(technicianName))),
             ],
           ),
+          const SizedBox(height: 8),
 
+          Row(
+            children: [
+              const Icon(Icons.phone, color: primary, size: 20),
+              const SizedBox(width: 8),
+              Text(technicianPhone),
+            ],
+          ),
           const SizedBox(height: 12),
 
           /// REQUEST ID
@@ -203,7 +227,7 @@ class CustomerReportsScreen extends StatelessWidget {
             ),
 
             child: Text(
-              reason,
+              lang.translateReportType(reason),
 
               style: const TextStyle(
                 fontSize: 14,

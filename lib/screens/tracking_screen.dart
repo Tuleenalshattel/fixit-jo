@@ -176,6 +176,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     required String requestId,
     required String customerId,
     required String customerName,
+    required String customerPhone,
   }) {
     final lang = Provider.of<AppLanguage>(context, listen: false);
 
@@ -227,13 +228,22 @@ class _TrackingScreenState extends State<TrackingScreen> {
             ElevatedButton(
               onPressed: () async {
                 final techId = FirebaseAuth.instance.currentUser!.uid;
+                final techDoc = await FirebaseFirestore.instance
+                    .collection('technicians')
+                    .doc(techId)
+                    .get();
+
+                final techData = techDoc.data() ?? {};
 
                 await FirebaseFirestore.instance
                     .collection('customer_reports')
                     .add({
                       'customerId': customerId,
                       'customerName': customerName,
+                      'customerPhone': customerPhone,
                       'technicianId': techId,
+                      'technicianName': techData['name'] ?? '',
+                      'technicianPhone': techData['phone'] ?? '',
                       'requestId': requestId,
                       'reportType': selectedType,
                       'reason': reasonController.text.trim(),
@@ -595,6 +605,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                                   customerId: data['customerId'] ?? '',
                                   customerName:
                                       data['customerName'] ?? lang.customer,
+                                  customerPhone: data['customerPhone'] ?? '',
                                 );
                               },
                               child: Text(lang.reportCustomer),

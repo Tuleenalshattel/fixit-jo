@@ -292,8 +292,8 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
           });
       await FirebaseFirestore.instance.collection('notifications').add({
         'userId': nearestTechnicianId,
-        'title': 'New Service Request 🔧',
-        'body': '$customerName requested $_selectedService service',
+        'title': lang.newServiceRequest,
+        'body': lang.newServiceRequestBody(customerName, _selectedService),
         'type': 'new_request',
         'requestId': docRef.id,
         'isRead': false,
@@ -319,7 +319,7 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ).showSnackBar(SnackBar(content: Text(lang.errorMessage(e.toString()))));
       setState(() => _isSubmitting = false);
     }
   }

@@ -155,8 +155,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
 
     await FirebaseFirestore.instance.collection('notifications').add({
       'userId': requestData['customerId'],
-      'title': 'Request Accepted',
-      'body': '${techData['name']} accepted your request',
+      'title': lang.requestAccepted,
+      'body': lang.requestAcceptedBody(techData['name']?.toString() ?? ''),
       'type': 'request_accepted',
       'requestId': requestId,
       'isRead': false,
@@ -166,7 +166,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Request accepted')));
+    ).showSnackBar(SnackBar(content: Text(lang.requestAccepted)));
   }
 
   Future<void> declineRequest(String requestId) async {
@@ -742,7 +742,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                         icon: serviceIcon,
                         status: status,
                         lang: lang,
-                        badge: "NEW REQUEST",
+                        badge: lang.newRequest,
                         onAccept: () => acceptRequest(doc.id, lang),
                         onDecline: () => declineRequest(doc.id),
                       );
@@ -894,7 +894,10 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(service, style: const TextStyle(color: Colors.blue)),
+                Text(
+                  lang.translateService(service),
+                  style: const TextStyle(color: Colors.blue),
+                ),
                 const SizedBox(height: 6),
 
                 Row(
@@ -1082,9 +1085,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                               .collection('notifications')
                               .add({
                                 'userId': customerId,
-                                'title': 'Service Completed ✅',
-                                'body':
-                                    'Your service has been completed. Please rate your experience.',
+                                'title': lang.serviceCompleted,
+                                'body': lang.serviceCompletedBody,
                                 'type': 'service_completed',
                                 'requestId': requestId,
                                 'isRead': false,

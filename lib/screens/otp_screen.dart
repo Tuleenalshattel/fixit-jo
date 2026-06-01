@@ -139,9 +139,9 @@ class _OtpScreenState extends State<OtpScreen> {
         await FirebaseFirestore.instance.collection('notifications').add({
           'userId': 'admin',
 
-          'title': 'New Technician Registration',
+          'title': lang.newTechnicianRegistration,
 
-          'body': '${widget.name} is waiting for approval',
+          'body': lang.newTechnicianRegistrationBody(widget.name),
 
           'type': 'new_technician',
 

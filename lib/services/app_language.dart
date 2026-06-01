@@ -134,6 +134,7 @@ class AppLanguage extends ChangeNotifier {
   String get darkMode => _isArabic ? 'الوضع الداكن' : 'Dark Mode';
 
   // Request Service translations
+
   String get requestService => _isArabic ? 'طلب خدمة' : 'Request Service';
   String get selectService => _isArabic ? 'اختر الخدمة' : 'Select Service';
   String get describeProblem =>
@@ -179,6 +180,12 @@ class AppLanguage extends ChangeNotifier {
   String get confirmLocation => _isArabic ? 'تأكيد الموقع' : 'Confirm Location';
 
   // OTP translations
+
+  String newTechnicianRegistrationBody(String name) => _isArabic
+      ? '$name بانتظار موافقة الإدارة'
+      : '$name is waiting for approval';
+  String get newTechnicianRegistration =>
+      _isArabic ? 'تسجيل فني جديد' : 'New Technician Registration';
   String get accountBlocked => _isArabic
       ? 'تم حظر هذا الحساب من قبل الإدارة'
       : 'This account has been blocked by admin';
@@ -331,7 +338,7 @@ class AppLanguage extends ChangeNotifier {
   String get noAvailableTechnician =>
       _isArabic ? 'لا يوجد فني متاح' : 'No available technician found';
   String get requestSubmitted =>
-      _isArabic ? 'لا تتوفر خدمات' : 'No services available';
+      _isArabic ? 'تم ارسال الطلب   ' : 'Request Submitted';
   String get Noservicesavailable =>
       _isArabic ? 'تم إرسال الطلب بنجاح' : 'Request submitted successfully';
   String get sud =>
@@ -376,7 +383,38 @@ class AppLanguage extends ChangeNotifier {
   String get online => _isArabic ? 'متصل ' : 'Online';
   String get imageselected => _isArabic ? 'تم اختيار الصورة' : 'Image selected';
 
-  // Technician Home Screen
+  // Technician Home
+
+  String get newRequest => _isArabic ? 'طلب جديد' : 'NEW REQUEST';
+  String translateReportType(String type) {
+    switch (type) {
+      case 'Unpaid Service':
+        return _isArabic ? 'خدمة غير مدفوعة' : 'Unpaid Service';
+
+      case 'Abusive Behavior':
+        return _isArabic ? 'سلوك مسيء' : 'Abusive Behavior';
+
+      case 'Fake Request':
+        return _isArabic ? 'طلب وهمي' : 'Fake Request';
+
+      case 'Other':
+        return _isArabic ? 'أخرى' : 'Other';
+
+      default:
+        return type;
+    }
+  }
+
+  String get newServiceRequest =>
+      _isArabic ? 'طلب خدمة جديد 🔧  ' : 'New Service Request 🔧';
+  String newServiceRequestBody(String customerName, String service) => _isArabic
+      ? 'طلب $customerName خدمة ${translateService(service)}'
+      : '$customerName requested ${translateService(service)} service';
+  String get requestAccepted =>
+      _isArabic ? 'تم قبول الطلب' : 'Request Accepted';
+
+  String requestAcceptedBody(String name) =>
+      _isArabic ? 'قام $name بقبول طلبك' : '$name accepted your request';
   String get available => _isArabic ? 'متاح' : 'Available';
   String get unavailable => _isArabic ? 'غير متاح' : 'Unavailable';
   String get incomingRequests =>
@@ -642,7 +680,7 @@ class AppLanguage extends ChangeNotifier {
       _isArabic ? " تقارير العملاء" : "Customer Reports";
   String get reviewCustomer => _isArabic
       ? "مراجعة شكاوي العملاء المقدمة من قبل الفنيين "
-      : "Review customer complaints submitted by technicians.";
+      : "Review customer complaints  ted by technicians.";
   String get noCustomerReports =>
       _isArabic ? "  لا توجد تقارير من العملاء" : "No customer reports";
   String get noReasonProvided =>
